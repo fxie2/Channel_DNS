@@ -1,0 +1,27 @@
+------------------------------------------------------------------
+THE PERIODIC CHANNEL FLOW 
+------------------------------------------------------------------
+THE NUMBER OF GRID IN X1 DIRECTION   N1     :             17
+THE NUMBER OF GRID IN X2 DIRECTION   N2     :            129
+THE NUMBER OF GRID IN X3 DIRECTION   N3     :             33
+REYNOLDS NUMBER                      RE     :         2850.0
+THE PHYSICAL LENGTH IN X1            ALX    :           6.28
+THE PHYSICAL LENGTH IN X3            ALZ    :           3.14
+INPUT LENGTH IN CODE  (YES=1)        INCODE :              1
+THE NUMBER OF TIME STEP              NTST   :         100000
+INITIAL TURBULENCE INTENSITY         VPER   :           0.50
+TIME STEP                            DT     :          0.01
+OPTIMAL TIME STEP   (YES=1)          IDTOPT :              1
+MAXIMUM CFL NUMBER                   CFLMAX :            2.0
+WRITE OPTION        (YES=1)          NWRITE :              0
+READ  OPTION        (YES=1)          NREAD  :              0
+AVERAGING OPTION    (YES=1)          IAVG   :              1
+INTERVAL OF PRINT TIME               NPRN   :            10
+INSTANTANEOUS FLOW FIELD (YES=1)     INSF   :              1
+INTERVAL OF PRINT IN INSF(Non-zero)  NINS   :           100
+------------------------------------------------------------------
+FILENAMES
+INPUT  FILE FOR READUP               FILEINI:channel.ini
+GRID   FILE IN Y DOMAIN              FILEGRD:channel.grd
+------------------------------------------------------------------
+1234567890123456789012345678901234567890123456789012345678901234567890
