@@ -14,7 +14,7 @@ MODULE FIELD
     LOGICAL, SAVE :: ALL_ALLOCATED = .FALSE.
     REAL(8), SAVE, ALLOCATABLE :: YSUM(:)
     
-    PRIVATE YSUM
+    PRIVATE YSUM, ALL_ALLOCATED
     
     CONTAINS
     
@@ -120,14 +120,14 @@ MODULE FIELD
         RFLOW = 4 / 3 !INTEGRAL OF U ALONG Y
         CALL CHECK_FLOW_RATE()
         U = RFLOW / XFLOW * U
-        W = W - FLOW3
+        W = W - ZFLOW
         
         !IMPOSE ZERO-PRESSURE FLUCTUATIONS
         P = 0
         
         !INITIAL MEAN PRESSURE GRADIENT AT LAMINAR FLOW FIELD
-        PRX = -2 / RE
-        PRZ = 0
+        PGX = -2 / RE
+        PGZ = 0
     END SUBROUTINE INIUP
     
     SUBROUTINE CHECK_FLOW_RATE()
@@ -203,84 +203,5 @@ MODULE FIELD
         END DO
     END SUBROUTINE CHECK_CFL
     
-        
-    REAL FUNCTION PHI1(X, Y, Z, T)
-        IMPLICIT NONE
-        REAL(8), INTENT(IN) :: X, Y, Z, T
-        
-        REAL ETA, DETADX, DETA0DX
-        
-        ETA = (UP_WAVE_AMPX * SIN(UP_WAVE_NUMX * X - UP_WAVE_PSDX * T)  &
-            +  UP_WAVE_AMPZ * SIN(UP_WAVE_NUMZ * Z - UP_WAVE_PSDZ * T)  &
-            -  DN_WAVE_AMPX * SIN(DN_WAVE_NUMX * X - DN_WAVE_NUMX * T)  &
-            -  DN_WAVE_AMPZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_NUMZ * T)) / 2
-        
-        DETADX = (UP_WAVE_AMPX * UP_WAVE_NUMX * COS(UP_WAVE_NUMX * X - UP_WAVE_PSDX * T)    &
-               -  DN_WAVE_AMPX * DN_WAVE_NUMX * COS(DN_WAVE_NUMX * X - DN_WAVE_PSDX * T)) / 2
-        
-        DETA0DX = (UP_WAVE_AMPX * UP_WAVE_NUMX * COS(UP_WAVE_NUMX * X - UP_WAVE_PSDX * T)    &
-                +  DN_WAVE_AMPX * DN_WAVE_NUMX * COS(DN_WAVE_NUMX * X - DN_WAVE_PSDX * T)) / 2
-        
-        PHI1 = -(Y * DETADX + DETA0DX) / (1 + ETA)
-    END FUNCTION PHI1
-    
-    REAL FUNCTION PHI2(X, Y, Z, T)
-        IMPLICIT NONE
-        REAL(8), INTENT(IN) :: X, Y, Z, T
-        
-        REAL ETA
-        
-        ETA = (UP_WAVE_AMPX * SIN(UP_WAVE_NUMX * X - UP_WAVE_PSDX * T)  &
-            +  UP_WAVE_AMPZ * SIN(UP_WAVE_NUMZ * Z - UP_WAVE_PSDZ * T)  &
-            -  DN_WAVE_AMPX * SIN(DN_WAVE_NUMX * X - DN_WAVE_NUMX * T)  &
-            -  DN_WAVE_AMPZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_NUMZ * T)) / 2
-        
-        PHI2 = 1 / (1 + ETA) - 1
-    END FUNCTION PHI2
-    
-    REAL FUNCTION PHI3(X, Y, Z, T)
-        IMPLICIT NONE
-        REAL(8), INTENT(IN) :: X, Y, Z, T
-        
-        REAL ETA, DETADZ, DETA0DZ
-        
-        ETA = (UP_WAVE_AMPX * SIN(UP_WAVE_NUMX * X - UP_WAVE_PSDX * T)  &
-            +  UP_WAVE_AMPZ * SIN(UP_WAVE_NUMZ * Z - UP_WAVE_PSDZ * T)  &
-            -  DN_WAVE_AMPX * SIN(DN_WAVE_NUMX * X - DN_WAVE_NUMX * T)  &
-            -  DN_WAVE_AMPZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_NUMZ * T)) / 2
-        
-        DETADZ = (UP_WAVE_AMPZ * UP_WAVE_NUMZ * COS(UP_WAVE_NUMZ * Z - UP_WAVE_PSDZ * T)    &
-               -  DN_WAVE_AMPZ * DN_WAVE_NUMZ * COS(DN_WAVE_NUMZ * Z - DN_WAVE_PSDZ * T)) / 2
-        
-        DETA0DZ = (UP_WAVE_AMPZ * UP_WAVE_NUMZ * COS(UP_WAVE_NUMZ * Z - UP_WAVE_PSDZ * T)    &
-                +  DN_WAVE_AMPZ * DN_WAVE_NUMZ * COS(DN_WAVE_NUMZ * Z - DN_WAVE_PSDZ * T)) / 2
-        
-        PHI3 = -(Y * DETADZ + DETA0DZ) / (1 + ETA)
-    END FUNCTION PHI3
-    
-    REAL FUNCTION PHIT(X, Y, Z, T)
-        IMPLICIT NONE
-        
-        REAL(8), INTENT(IN) :: X, Y, Z, T
-        
-        REAL ETA, DETADT, DETA0DT
-        
-        ETA = (UP_WAVE_AMPX * SIN(UP_WAVE_NUMX * X - UP_WAVE_PSDX * T)  &
-            +  UP_WAVE_AMPZ * SIN(UP_WAVE_NUMZ * Z - UP_WAVE_PSDZ * T)  &
-            -  DN_WAVE_AMPX * SIN(DN_WAVE_NUMX * X - DN_WAVE_NUMX * T)  &
-            -  DN_WAVE_AMPZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_NUMZ * T)) / 2
-        
-        DETADT = (UP_WAVE_AMPX * UP_WAVE_PSDX * COS(UP_WAVE_NUMX * X - UP_WAVE_PSDX * T)    &
-               +  UP_WAVE_AMPZ * UP_WAVE_PSDZ * COS(UP_WAVE_NUMZ * Z - UP_WAVE_PSDZ * T)    &
-               -  DN_WAVE_AMPX * DN_WAVE_PSDX * COS(DN_WAVE_NUMX * X - DN_WAVE_PSDX * T)    &
-               -  DN_WAVE_AMPZ * DN_WAVE_PSDZ * COS(DN_WAVE_NUMZ * Z - DN_WAVE_PSDZ * T)) / 2
-        
-        DETA0DT = (UP_WAVE_AMPX * UP_WAVE_PSDX * COS(UP_WAVE_NUMX * X - UP_WAVE_PSDX * T)    &
-                +  UP_WAVE_AMPZ * UP_WAVE_PSDZ * COS(UP_WAVE_NUMZ * Z - UP_WAVE_PSDZ * T)    &
-                +  DN_WAVE_AMPX * DN_WAVE_PSDX * COS(DN_WAVE_NUMX * X - DN_WAVE_PSDX * T)    &
-                +  DN_WAVE_AMPZ * DN_WAVE_PSDZ * COS(DN_WAVE_NUMZ * Z - DN_WAVE_PSDZ * T)) / 2
-        
-        PHIT = -(Y * DETADT + DTEA0DT) / (1 + ETA)
-    END FUNCTION PHIT
     
     END MODULE FIELD
