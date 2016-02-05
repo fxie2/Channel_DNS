@@ -6,9 +6,15 @@ MODULE MESH
     REAL, SAVE, ALLOCATABLE :: X(:), Y(:), Z(:)
     
     !CELL LENGTH
-    REAL, SAVE, ALLOCATABLE :: HY(:)
-    REAL, SAVE, ALLOCATABLE :: DY(:)
+    REAL, SAVE, ALLOCATABLE :: H(:), DY2H(:, :), DYH(:, :)
+    REAL, SAVE, ALLOCATABLE :: DY(:), DY2DY(:, :), DYDY(:, :)
     REAL, SAVE :: DX, DZ
+    
+    !WAVE AMPTITUDE
+    REAL, SAVE :: UP_WAVE_AMPX, UP_WAVE_AMPZ
+    REAL, SAVE :: DN_WAVE_AMPX, DN_WAVE_AMPZ
+    REAL, SAVE :: DDT_UP_AMPX, DDT_UP_AMPZ
+    REAL, SAVE :: DDT_DN_AMPX, DDT_DN_AMPZ
     
     !RANK
     INTEGER, SAVE, ALLOCATABLE :: IM(:), IP(:)
@@ -20,6 +26,8 @@ MODULE MESH
     
     LOGICAL, SAVE :: ALL_ALLOCATED = .FALSE.
     
+    PRIVATE ALL_ALLOCATED
+    
     CONTAINS
     
     SUBROUTINE NEW_MESH()
@@ -28,8 +36,12 @@ MODULE MESH
             ALLOCATE(X(0:N1))
             ALLOCATE(Y(0:N2))
             ALLOCATE(Z(0:N3))
-            ALLOCATE(HY(N2+1))
-            ALLOCATE(DY(N2))
+            ALLOCATE(H(N2+1))
+            ALLOCATE(DYH(3, N2))
+            ALLOCATE(DY2H(3, N2))
+            ALLOCATE(DY(0:N2+1))
+            ALLOCATE(DY2DY(3, N2))
+            ALLOCATE(DYDY(3, N2))
             ALLOCATE(IM(N1))
             ALLOCATE(IP(N1))
             ALLOCATE(JM(N2))
@@ -43,7 +55,7 @@ MODULE MESH
     SUBROUTINE INIT_MESH()
         IMPLICIT NONE
         
-        INTEGER I
+        INTEGER I, J
         
         IF(.NOT. ALL_ALLOCATED) CALL NEW_MESH()
         DX = LX / N1
@@ -52,11 +64,19 @@ MODULE MESH
         Z(0) = 0
         FORALL (I = 1 : N1)
             X(I) = DX * I
+        END FORALL
+        FORALL (I = 1 : N3)
             Z(I) = DZ * I
         END FORALL
-        OPEN(100, FILE=GRID_FILE_PATH, STATUS = 'OLD')
-        READ(100) (Y(I), I = 0, N2)
-        CLOSE(100)
+        
+        !OPEN(100, FILE=GRID_FILE_PATH, STATUS = 'OLD')
+        !READ(100, *) (Y(I), I = 0, N2)
+        !CLOSE(100)
+        DO I = 0, N2
+            Y(I) = -COS(PI * I / N2)
+        END DO
+        
+        Y = Y + 1
         
         !SCALE MESH TO Y IN [-1, 1]
         SCALE = 2 / (Y(N2) - Y(0))
@@ -71,11 +91,11 @@ MODULE MESH
         DO I = 1, N2
             DY(I) = Y(I) - Y(I-1)
         END DO
-        DO I = 2, N2
-            HY(I) = (DY(I-1) + DY(I)) / 2
+        DY(0) = 0
+        DY(N2 + 1) = 0
+        DO I = 1, N2 + 1
+            H(I) = (DY(I-1) + DY(I)) / 2
         END DO
-        HY(1) = DY(1) / 2
-        HY(N2+1) = DY(N2) / 2
         FORALL (I = 1 : N1)
             IM(I) = I - 1
             IP(I) = I + 1
@@ -91,18 +111,48 @@ MODULE MESH
         IM(1) = N1
         IP(N1) = 1
         KM(1) = N3
-        KM(N3) = 1
+        KP(N3) = 1
+        DO J = 1, N2
+            DY2DY(1, J) = 1 / H(J) / DY(J)
+            DY2DY(2, J) = -(1 / DY(J) + 1 / DY(JM(J))) / H(J)
+            DY2DY(3, J) = 1 / H(J) / DY(JM(J))
+            DYDY(1, J) = DY(J) * DY(JM(J)) / (DY(J) + DY(JM(J))) / DY(J) / DY(J)
+            DYDY(2, J) = DY(J) * DY(JM(J)) / (DY(J) + DY(JM(J))) * (1 / DY(JM(J)) / DY(JM(J)) - 1 / DY(J) / DY(J))
+            DYDY(3, J) = DY(J) * DY(JM(J)) / (DY(J) + DY(JM(J))) / DY(JM(J)) / DY(JM(J)) * -1.0
+            DY2H(1, J) = 2 / (H(J) + H(JP(J))) / H(JP(J))
+            DY2H(2, J) = 2 / (H(J) + H(JP(J))) * -(1 / H(JP(J)) + 1 / H(J))
+            DY2H(3, J) = 2 / (H(J) + H(JP(J))) / H(J)
+            DYH(1, J) = H(J) * H(JP(J)) / (H(J) + H(JP(J))) / H(JP(J)) / H(JP(J))
+            DYH(2, J) = H(J) * H(JP(J)) / (H(J) + H(JP(J))) * (1 / H(J) / H(J) - 1 / H(JP(J)) / H(JP(J)))
+            DYH(3, J) = H(J) * H(JP(J)) / (H(J) + H(JP(J))) / H(J) / H(J) * -1.0
+        END DO
     END SUBROUTINE INIT_MESH
     
     SUBROUTINE UPDATE_MESH()
         IMPLICIT NONE
+        IF(T <= DEVELOP_TIME) THEN
+            UP_WAVE_AMPX = T / DEVELOP_TIME * MAX_UP_AMPX
+            UP_WAVE_AMPZ = T / DEVELOP_TIME * MAX_UP_AMPZ
+            DN_WAVE_AMPX = T / DEVELOP_TIME * MAX_DN_AMPX
+            DN_WAVE_AMPZ = T / DEVELOP_TIME * MAX_DN_AMPZ
+            DDT_UP_AMPX = MAX_UP_AMPX / DEVELOP_TIME
+            DDT_UP_AMPZ = MAX_UP_AMPZ / DEVELOP_TIME
+            DDT_DN_AMPX = MAX_DN_AMPX / DEVELOP_TIME
+            DDT_DN_AMPZ = MAX_DN_AMPZ / DEVELOP_TIME
+        ELSE
+            DDT_UP_AMPX = 0
+            DDT_UP_AMPZ = 0
+            DDT_DN_AMPX = 0
+            DDT_DN_AMPZ = 0
+        END IF
     END SUBROUTINE UPDATE_MESH
         
     
     SUBROUTINE DEL_MESH()
         IMPLICIT NONE
         DEALLOCATE(X, Y, Z)
-        DEALLOCATE(HY, DY)
+        DEALLOCATE(H, DYH, DY2H)
+        DEALLOCATE(DY, DYDY, DY2DY)
         DEALLOCATE(IM, IP, JM, JP, KM, KP)
         ALL_ALLOCATED = .FALSE.
     END SUBROUTINE DEL_MESH
@@ -281,5 +331,15 @@ MODULE MESH
         DPHI3DZ = -((Y * D2ETADZ + D2ETA0DZ) * (1 + ETA) - DETADZ * (Y * DETADZ + DETA0DZ)) / (1 + ETA) / (1 + ETA)
     END FUNCTION DPHI3DZ
     
+    REAL FUNCTION GETETA(X, Z, T)
+        IMPLICIT NONE
         
+        REAL, INTENT(IN) :: X, Z, T
+        
+        GETETA = (UP_WAVE_AMPX * SIN(UP_WAVE_NUMX * X - UP_WAVE_PSDX * T)  &
+               +  UP_WAVE_AMPZ * SIN(UP_WAVE_NUMZ * Z - UP_WAVE_PSDZ * T)  &
+               -  DN_WAVE_AMPX * SIN(DN_WAVE_NUMX * X - DN_WAVE_NUMX * T)  &
+               -  DN_WAVE_AMPZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_NUMZ * T)) / 2
+    END FUNCTION GETETA
+    
 END MODULE MESH

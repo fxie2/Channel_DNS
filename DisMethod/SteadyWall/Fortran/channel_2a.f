@@ -51,6 +51,7 @@ c	USE MSIMSL
 
       TIME=0.0
       Call DIVCHECK(U,TIME,DIVMAX)
+      PRINT*, 'DIVMAX = ', DIVMAX
       Call CHKMF(U,TIME)
 
       IMORE=0                ! Index of written file
@@ -70,6 +71,7 @@ c	USE MSIMSL
 
           Call GETUP(U,P,TIME,PRESG,PRESG3)
           Call DIVCHECK(U,TIME,DIVMAX)
+          PRINT*, 'DIVMAX = ', DIVMAX
           Call CHKMF(U,TIME)
           CALL WALLSS(U,P,TIME)
           Call ENERGY(U,P)
@@ -790,7 +792,6 @@ C     M13W^N
      >            -RM11U_N-RM12V_N-RM13W_N
 
  10   Continue
-
 
       Return
       End

@@ -25,6 +25,8 @@ PRESSURE GRADIENT IN Z       PGZ            :            0.0
 COMPUTE AVERAGE FIELD      (TRUE/FALSE)	    :           TRUE
 INSTANTANEOUS FLOW FIELD   (TRUE/FALSE)	    :           TRUE
 INTERVAL OF PRINT IN INSF(Non-zero)  NINS   :            100
+MAX SOLVE ITERATION NUMBER MAX_SOLVE_ITER   :             50
+MAX SOLVE RELATIVE ERROR   MAX_SOLVE_ERR    :          1E-10
 UP WAVE WALL               (TRUE/FALSE)     :           TRUE
 UP WAVE NUMX                                :              4
 UP WAVE NUMZ                                :              0
@@ -39,6 +41,7 @@ DOWN WAVE PHASE SPEEDX                      :              0
 DOWN WAVE PHASE SPEEDZ                      :              0
 DOWN WAVE AMPLITUDEX                        :              0
 DOWN WAVE AMPLITUDEZ                        :              0
+DEVELOP TIME                                :            1.0
 ------------------------------------------------------------------
 INITIALIZE FILE PATH              :           CHANNEL.INI
 GRID FILE PATH                    :           CHANNEL.GRD

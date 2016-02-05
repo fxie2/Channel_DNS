@@ -1,8 +1,57 @@
 PROGRAM CHANNEL_MAIN
     USE GLOBAL_PARAMETER
+    USE MESH
+    USE FIELD
+    USE MATH
     IMPLICIT NONE
     CHARACTER(LEN = 128) SOURCE
     
-    CALL READ_FROM_FILE('Input_parameter.txt')
+    CALL INIT_PARAMETERS()
     
+    !INIT MESH
+    CALL NEW_MESH()
+    CALL INIT_MESH()
+    !INIT FIELD
+    CALL ALLOC_FIELD()
+    CALL INIUP()
+    
+    CALL CHECK_DIV()
+    CALL CHECK_CFL()
+    CALL CHECK_FLOW_RATE
+    PRINT*, XFLOW, ZFLOW
+    PRINT*, DIVMAX
+    PRINT*, CFLMAX
+    U = U
+    W = W
+    V = V
+    P = P
+    DO WHILE(CURNT_STEP_NUM < TOTAL_STEP_NUM)
+        
+        CALL SOLVEUP()
+        U = U
+        V = V
+        W = W
+        P = P
+        CALL CHECK_DIV()
+        CALL CHECK_FLOW_RATE()
+        PRINT*, 'TIME : ', T
+        WRITE(*, 100) 'DIVMAX : ', DIVMAX
+        WRITE(*, 100) 'PGX    : ', PGX
+        WRITE(*, 100) 'PGZ    : ', PGZ
+        WRITE(*, 100) 'XFLOW  : ', XFLOW
+        WRITE(*, 100) 'ZFLOW  : ', ZFLOW
+100     FORMAT(A10, E25.8) 
+        READ*
+        PRINT*
+        CURNT_STEP_NUM = CURNT_STEP_NUM + 1
+        T = T + DT
+    END DO
+    
+    !FINALIZE MESH
+    CALL DEL_MESH()
+    !FINALIZE FIELD
+    CALL DEALLOC_FIELD()
+    CALL DEALLOC_FAC()
+    CALL DELETEVEC()
+    CALL FFT_DEALLOC()
     END PROGRAM CHANNEL_MAIN
