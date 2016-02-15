@@ -108,12 +108,9 @@ MODULE MESH
             DY2DY(1, J) = 1 / H(J) / DY(J)
             DY2DY(2, J) = -(1 / DY(J) + 1 / DY(JM(J))) / H(J)
             DY2DY(3, J) = 1 / H(J) / DY(JM(J))
-            !DYDY(1, J) = DY(J) * DY(JM(J)) / (DY(J) + DY(JM(J))) / DY(J) / DY(J)
-            !DYDY(2, J) = DY(J) * DY(JM(J)) / (DY(J) + DY(JM(J))) * (1 / DY(JM(J)) / DY(JM(J)) - 1 / DY(J) / DY(J))
-            !DYDY(3, J) = DY(J) * DY(JM(J)) / (DY(J) + DY(JM(J))) / DY(JM(J)) / DY(JM(J)) * -1.0
-            DYDY(1, J) = 1 / DY(J) / H(J)
-            DYDY(2, J) = -(1 / DY(J) + 1 / DY(JM(J))) / H(J)
-            DYDY(3, J) = 1 / DY(JM(J)) / H(J)
+            DYDY(1, J) = DY(J) * DY(JM(J)) / (DY(J) + DY(JM(J))) / DY(J) / DY(J)
+            DYDY(2, J) = DY(J) * DY(JM(J)) / (DY(J) + DY(JM(J))) * (1 / DY(JM(J)) / DY(JM(J)) - 1 / DY(J) / DY(J))
+            DYDY(3, J) = DY(J) * DY(JM(J)) / (DY(J) + DY(JM(J))) / DY(JM(J)) / DY(JM(J)) * -1.0
             !DY2H(1, J) = 2 / (H(J) + H(JP(J))) / H(JP(J))
             !DY2H(2, J) = 2 / (H(J) + H(JP(J))) * -(1 / H(JP(J)) + 1 / H(J))
             !DY2H(3, J) = 2 / (H(J) + H(JP(J))) / H(J)
@@ -124,6 +121,14 @@ MODULE MESH
             DYH(2, J) = H(J) * H(JP(J)) / (H(J) + H(JP(J))) * (1 / H(J) / H(J) - 1 / H(JP(J)) / H(JP(J)))
             DYH(3, J) = H(J) * H(JP(J)) / (H(J) + H(JP(J))) / H(J) / H(J) * -1.0
         END DO
+        J = 1
+        DY2H(1, J) = 2 / (H(J) + H(JP(J))) / H(JP(J))
+        DY2H(2, J) = 2 / (H(J) + H(JP(J))) * -(1 / H(JP(J)) + 1 / H(J))
+        DY2H(3, J) = 2 / (H(J) + H(JP(J))) / H(J)
+        J = N2
+        DY2H(1, J) = 2 / (H(J) + H(JP(J))) / H(JP(J))
+        DY2H(2, J) = 2 / (H(J) + H(JP(J))) * -(1 / H(JP(J)) + 1 / H(J))
+        DY2H(3, J) = 2 / (H(J) + H(JP(J))) / H(J)        
     END SUBROUTINE INIT_MESH
     
     SUBROUTINE DEL_MESH()
