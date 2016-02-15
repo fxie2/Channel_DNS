@@ -250,7 +250,7 @@ MODULE FIELD
     
     SUBROUTINE GETDIV(UU, VV, WW, DDIV, TT)
         IMPLICIT NONE
-        REAL, INTENT(IN) :: UU(:, :, :), VV(:, :, :), WW(:, :, :), TT
+        REAL, INTENT(IN) :: UU(:, 0:, :), VV(:, :, :), WW(:, 0:, :), TT
         REAL, INTENT(OUT) :: DDIV(:, :, :)
         REAL XC, YC, ZC
         REAL DUDY, DVDY, DWDY
