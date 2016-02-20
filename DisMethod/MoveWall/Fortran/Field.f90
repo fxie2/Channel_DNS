@@ -510,6 +510,7 @@ MODULE FIELD
     SUBROUTINE FORM_R1()
         IMPLICIT NONE
         REAL VISCOS, CROSS, NONLIN, PRESSG
+        REAL BC_DN, BC_UP, BCOND
         REAL DUDX(3), DUDZ(3), DUDY
         REAL DUUDX, DUVDY, DUWDZ, DUUDY, DUWDY
         REAL U1, U2, V1, V2, W1, W2, W_UP, W_MI, W_DN
@@ -609,6 +610,9 @@ MODULE FIELD
                     
                     !PRESSURE TERM
                     PRESSG = (P(I, J, K) - P(IM(I), J, K)) / DX + PGX
+                    
+                    !BOUNDARY TERM
+                    BC_DN = 
                     
                     !FORM R1 TERM
                     R1(I, J, K) = VISCOS + CROSS - PHIT(XC, YC, ZC, T) * DUDY * DT - NONLIN * DT - PRESSG * DT
