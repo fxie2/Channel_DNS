@@ -36,6 +36,7 @@ int main()
 			cout << "xflow : " << xflow << '\n';
 			cout << "zflow : " << zflow << '\n';
 
+			//cin.get();
 			//log << "time :" << t << '\n';
 			//log << "divmax : " << divmax << '\n';
 			//log << "pgx : " << pgx << '\n';

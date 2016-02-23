@@ -5,14 +5,27 @@
 
 int main()
 {
-	double b[6] = { 0,2,2,2,2,2 };
-	double a[6] = { -1, 0, -1, -1, -1 , -1};
-	double c[6] = { -1, -1, -1, -1, -1 , -1};
-	double x[5];
-	double r[5] = { 1,2,3,4,5 };
-	ctdma(a, b, c, x, r, 1, 1, 5);
-
-	for (size_t i = 0; i < 5;i++)
-		std::cout << x[i] << ' ';
+	using namespace std;
+	Field3d<double> a(3, 1, 3), a0(3, 1, 3);
+	Field3d<double> bre(3, 1, 3), bim(3, 1, 3);
+	for (size_t i = 1; i < 4; i++)
+		for (size_t j = 1; j < 4; j++)
+			a(i, 1, j) = i * j;
+	a0 = a;
+	fft(a, bre, bim);
+	cout << 'a' << '\n';
+	cout << a;
+	cout << "bre\n";
+	cout << bre;
+	cout << "bim\n";
+	cout << bim;
+	ifft(bre, bim, a);
+	cout << 'a' << '\n';
+	cout << a;
+	cout << "bre\n";
+	cout << bre;
+	cout << "bim\n";
+	cout << bim;
+	cout << "a0 - a\n" << a0 - a;
 	return 0;
 }

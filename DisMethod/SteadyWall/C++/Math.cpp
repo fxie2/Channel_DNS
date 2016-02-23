@@ -212,12 +212,13 @@ void fft(Field3d<double>& pf, Field3d<double>& sf_re, Field3d<double>& sf_im)
 			for (size_t k = 1; k <= pf.dim3(); k++)
 				pf_1d_re[iter++] = pf(i, j, k);
 		DftiComputeForward(handler, pf_1d_re, pf_1d_im, sf_1d_re, sf_1d_im);
-		int iter2 = iter;
+		int iter2 = 0;
+		iter = 0;
 		for (size_t i = 1; i <= sf_re.dim1(); i++)
 			for (size_t k = 1; k <= sf_re.dim3(); k++)
 			{
-				sf_re(i, j, k) = sf_1d_re[--iter];
-				sf_im(i, j, k) = sf_1d_im[--iter2];
+				sf_re(i, j, k) = sf_1d_re[iter++];
+				sf_im(i, j, k) = sf_1d_im[iter2++];
 			}
 	}
 	fftshift(sf_re, sf_im);
@@ -233,6 +234,7 @@ void ifft(Field3d<double>& sf_re, Field3d<double>& sf_im, Field3d<double>& pf)
 	int iter2 = 0;
 	for (size_t j = 1; j <= pf.dim2(); j++)
 	{
+		iter = iter2 = 0;
 		for (size_t i = 1; i <= pf.dim1(); i++)
 			for (size_t k = 1; k <= pf.dim3(); k++)
 			{
@@ -240,11 +242,11 @@ void ifft(Field3d<double>& sf_re, Field3d<double>& sf_im, Field3d<double>& pf)
 				sf_1d_im[iter2++] = sf2_im(i, j, k);
 			}
 		DftiComputeBackward(handler, sf_1d_re, sf_1d_im, pf_1d_re, pf_1d_im);
+		iter = iter2 = 0;
 		for (size_t i = 1; i <= pf.dim1(); i++)
 			for (size_t k = 1; k <= pf.dim3(); k++)
 			{
-				pf(i, j, k) = pf_1d_re[--iter];
-				iter2--;
+				pf(i, j, k) = pf_1d_re[iter++];
 			}
 	}
 	pf /= (pf.dim1() * pf.dim3());
@@ -271,12 +273,12 @@ void fftshift(Field3d<double>& sf_re, Field3d<double>& sf_im)
 	for (size_t i = 1; i <= n1; i++)
 		for (size_t j = 1; j <= n2; j++)
 			for (size_t k = 1; k <= n3h; k++)
-				shift_re(i, j, k) = sf_re(i, j, n3 - n3h + k);
+				sf_re(i, j, k) = shift_re(i, j, n3 - n3h + k);
 
 	for (size_t i = 1; i <= n1; i++)
 		for (size_t j = 1; j <= n2; j++)
 			for (size_t k = 1; k <= n3 - n3h; k++)
-				shift_re(i, j, k + n3h) = sf_re(i, j, k);
+				sf_re(i, j, k + n3h) = shift_re(i, j, k);
 
 	for (size_t i = 1; i <= n1h; i++)
 		for (size_t j = 1; j <= n2; j++)
@@ -291,12 +293,12 @@ void fftshift(Field3d<double>& sf_re, Field3d<double>& sf_im)
 	for (size_t i = 1; i <= n1; i++)
 		for (size_t j = 1; j <= n2; j++)
 			for (size_t k = 1; k <= n3h; k++)
-				shift_im(i, j, k) = sf_im(i, j, n3 - n3h + k);
+				sf_im(i, j, k) = shift_im(i, j, n3 - n3h + k);
 
 	for (size_t i = 1; i <= n1; i++)
 		for (size_t j = 1; j <= n2; j++)
 			for (size_t k = 1; k <= n3 - n3h; k++)
-				shift_im(i, j, k + n3h) = sf_im(i, j, k);
+				sf_im(i, j, k + n3h) = shift_im(i, j, k);
 
 }
 
@@ -311,41 +313,41 @@ void ifftshift(Field3d<double>& sf_re, Field3d<double>& sf_im)
 	for (size_t i = 1; i <= n1; i++)
 		for (size_t j = 1; j <= n2; j++)
 			for (size_t k = 1; k <= n3 - n3h; k++)
-				sf_im(i, j, k + n3h) = shift_im(i, j, k);
+				shift_im(i, j, k) = sf_im(i, j, k + n3h);
 
 	for (size_t i = 1; i <= n1; i++)
 		for (size_t j = 1; j <= n2; j++)
 			for (size_t k = 1; k <= n3h; k++)
-				sf_im(i, j, k) = shift_im(i, j, n3 - n3h + k);
+				shift_im(i, j, k + n3 - n3h) = sf_im(i, j, k);
 
 	for (size_t i = 1; i <= n1 - n1h; i++)
 		for (size_t j = 1; j <= n2; j++)
 			for (size_t k = 1; k <= n3; k++)
-				sf_im(n1h + i, j, k) = shift_im(i, j, k);
+				sf_im(i, j, k) = shift_im(i + n1h, j, k);
 
 	for (size_t i = 1; i <= n1h; i++)
 		for (size_t j = 1; j <= n2; j++)
 			for (size_t k = 1; k <= n3; k++)
-				sf_im(i, j, k) = shift_im(n1 - n1h + i, j, k);
+				sf_im(i + n1 - n1h, j, k) = shift_im(i, j, k);
 
 	for (size_t i = 1; i <= n1; i++)
 		for (size_t j = 1; j <= n2; j++)
 			for (size_t k = 1; k <= n3 - n3h; k++)
-				sf_re(i, j, k + n3h) = shift_re(i, j, k);
+				shift_re(i, j, k) = sf_re(i, j, k + n3h);
 
 	for (size_t i = 1; i <= n1; i++)
 		for (size_t j = 1; j <= n2; j++)
 			for (size_t k = 1; k <= n3h; k++)
-				sf_re(i, j, k) = shift_re(i, j, n3 - n3h + k);
+				shift_re(i, j, k + n3 - n3h) = sf_re(i, j, k);
 
 	for (size_t i = 1; i <= n1 - n1h; i++)
 		for (size_t j = 1; j <= n2; j++)
 			for (size_t k = 1; k <= n3; k++)
-				sf_re(n1h + i, j, k) = shift_re(i, j, k);
+				sf_re(i, j, k) = shift_re(i + n1h, j, k);
 
 	for (size_t i = 1; i <= n1h; i++)
 		for (size_t j = 1; j <= n2; j++)
 			for (size_t k = 1; k <= n3; k++)
-				sf_re(i, j, k) = shift_re(n1 - n1h + i, j, k);
+				sf_re(i + n1 - n1h, j, k) = shift_re(i, j, k);
 
 }

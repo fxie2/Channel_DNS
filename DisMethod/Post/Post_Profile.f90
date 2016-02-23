@@ -4,6 +4,8 @@ MODULE PROFILE
     !MESH INFO
     INTEGER, SAVE :: N1, N2, N3
     REAL, SAVE :: LX, LY, LZ
+    REAL, PARAMETER :: PI = 3.141592653589793
+    REAL, SAVE :: RE
     
     !STATISTICS OPTIONS
     !AVERAGE FIELD
@@ -17,10 +19,26 @@ MODULE PROFILE
     CHARACTER(LEN = 128), SAVE :: MESH_PATH, DATA_PATH, PROFILE_PATH
     CHARACTER(LEN = 128), SAVE :: OUTPUT_PATH
     
+    !TOTAL NUM
+    INTEGER, SAVE :: START_NUM, END_NUM, STEP
     CONTAINS
     
     SUBROUTINE READ_PROFILE()
         IMPLICIT NONE
+        
+        N1 = 128
+        N2 = 128
+        N3 = 128
+        RE = 3300
+        LX = 4 * PI
+        LY = 2
+        LZ = 2 * PI
+        START_NUM = 99900
+        END_NUM = 99900
+        STEP = 100
+        MESH_PATH = 'E:\steady\CHANNEL.GRD'
+        DATA_PATH = 'I:\实验数据\channel_steady\DATA3300\'
+        OUTPUT_PATH = 'H:\post\'
         
     END SUBROUTINE READ_PROFILE
     
