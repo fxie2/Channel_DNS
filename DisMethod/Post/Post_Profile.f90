@@ -29,16 +29,19 @@ MODULE PROFILE
         N1 = 128
         N2 = 128
         N3 = 128
-        RE = 3300
+        RE = 5600
         LX = 4 * PI
         LY = 2
         LZ = 2 * PI
-        START_NUM = 99900
+        START_NUM = 0
         END_NUM = 99900
-        STEP = 100
+        STEP = 1000
+        
         MESH_PATH = 'E:\steady\CHANNEL.GRD'
-        DATA_PATH = 'I:\实验数据\channel_steady\DATA3300\'
-        OUTPUT_PATH = 'H:\post\'
+        DATA_PATH = 'F:\data3300\'
+        !DATA_PATH = 'E:\MOVE\'
+        !OUTPUT_PATH = 'E:\MOVEPOST\'
+        OUTPUT_PATH = 'H:\post_nc\'
         
     END SUBROUTINE READ_PROFILE
     

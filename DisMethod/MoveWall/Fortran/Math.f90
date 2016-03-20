@@ -11,6 +11,7 @@ MODULE MATH
     
     !SUPPLIMENTAL VECTOR
     REAL, SAVE, ALLOCATABLE :: CC(:), BB(:), DD(:)
+    COMPLEX, SAVE, ALLOCATABLE :: C_CC(:), C_BB(:), C_DD(:)
     REAL, SAVE, ALLOCATABLE :: U(:), V(:)
     INTEGER, SAVE :: LENGTH = -1
     LOGICAL, SAVE :: ALL_ALLOCATED
@@ -18,7 +19,9 @@ MODULE MATH
     !FFT/IFFT SUPPLIMENTAL ARRAY
     COMPLEX, SAVE, ALLOCATABLE :: PF_1D(:)
     COMPLEX, SAVE, ALLOCATABLE :: SF_1D(:)
-    INTEGER, SAVE :: FFT_DIM(2) = -1, FFT_LEN = -1
+    COMPLEX, SAVE, ALLOCATABLE :: SF2(:, :, :)
+    COMPLEX, SAVE, ALLOCATABLE :: SHIFT(:, :, :)
+    INTEGER, SAVE :: FFT_DIM(3) = -1, FFT_LEN = -1
     TYPE(DFTI_DESCRIPTOR), SAVE, POINTER :: HANDLER
     INTEGER, SAVE :: STATUS
     LOGICAL, SAVE :: FFT_ALLOCATED = .FALSE.
@@ -37,9 +40,13 @@ MODULE MATH
                 RETURN
             END IF
             DEALLOCATE(BB, CC, DD, U, V)
+            DEALLOCATE(C_BB, C_CC, C_DD)
             ALLOCATE(BB(N))
             ALLOCATE(CC(N))
             ALLOCATE(DD(N))
+            ALLOCATE(C_BB(N))
+            ALLOCATE(C_CC(N))
+            ALLOCATE(C_DD(N))
             ALLOCATE(U(N))
             ALLOCATE(V(N))
             LENGTH = N
@@ -47,6 +54,9 @@ MODULE MATH
             ALLOCATE(BB(N))
             ALLOCATE(CC(N))
             ALLOCATE(DD(N))
+            ALLOCATE(C_BB(N))
+            ALLOCATE(C_CC(N))
+            ALLOCATE(C_DD(N))
             ALLOCATE(U(N))
             ALLOCATE(V(N))
             LENGTH = N
@@ -58,6 +68,7 @@ MODULE MATH
         IMPLICIT NONE
         IF(ALL_ALLOCATED) THEN
             DEALLOCATE(BB, CC, DD, U, V)
+            DEALLOCATE(C_BB, C_CC, C_DD)
             LENGTH = 0
         END IF
     END SUBROUTINE DELETEVEC
@@ -100,21 +111,21 @@ MODULE MATH
         N = SIZE(X)
         CALL INITVEC(N)
         
-        CC(1) = C(1) / B(1)
+        C_CC(1) = C(1) / B(1)
         DO I = 2, N - 1
-            CC(I) = C(I) / (B(I) - A(I) * CC(I - 1))
+            C_CC(I) = C(I) / (B(I) - A(I) * C_CC(I - 1))
         END DO
         
-        BB = 1
+        C_BB = 1
         
-        DD(1) = R(1) / B(1)
+        C_DD(1) = R(1) / B(1)
         DO I = 2, N
-            DD(I) = (R(I) - A(I) * DD(I - 1)) / (B(I) - A(I) * CC(I - 1))
+            C_DD(I) = (R(I) - A(I) * C_DD(I - 1)) / (B(I) - A(I) * C_CC(I - 1))
         END DO
         
-        X(N) = DD(N)
+        X(N) = C_DD(N)
         DO I = N - 1, 1, -1
-            X(I) = DD(I) - CC(I) * X(I + 1)
+            X(I) = C_DD(I) - C_CC(I) * X(I + 1)
         END DO
     END SUBROUTINE TDMA_COMPLEX
     
@@ -175,7 +186,14 @@ MODULE MATH
                 ALLOCATE(PF_1D(L(1) * L(3)))
                 ALLOCATE(SF_1D(L(1) * L(3)))
             END IF
-            IF(FFT_DIM(1) .NE. L(1) .OR. FFT_DIM(2) .NE. L(3)) THEN
+            IF(FFT_DIM(1) < L(1) .OR. FFT_DIM(2) < L(2) .OR. FFT_DIM(3) < L(3)) THEN
+                DEALLOCATE(SHIFT)
+                ALLOCATE(SHIFT(L(1), L(2), L(3)))
+                DEALLOCATE(SF2)
+                ALLOCATE(SF2(L(1), L(2), L(3)))
+            END IF
+            
+            IF(FFT_DIM(1) .NE. L(1) .OR. FFT_DIM(3) .NE. L(3)) THEN
                 STATUS = DFTIFREEDESCRIPTOR(HANDLER)
                 STATUS = DFTICREATEDESCRIPTOR(HANDLER, DFTI_DOUBLE, DFTI_COMPLEX, 2, (/L(1), L(3)/))
                 STATUS = DFTISETVALUE(HANDLER, DFTI_PLACEMENT, DFTI_NOT_INPLACE)
@@ -184,6 +202,8 @@ MODULE MATH
         ELSE
             ALLOCATE(PF_1D(L(1) * L(3)))
             ALLOCATE(SF_1D(L(1) * L(3)))
+            ALLOCATE(SHIFT(L(1), L(2), L(3)))
+            ALLOCATE(SF2(L(1), L(2), L(3)))
             STATUS = DFTICREATEDESCRIPTOR(HANDLER, DFTI_DOUBLE, DFTI_COMPLEX, 2, (/L(1), L(3)/))
             STATUS = DFTISETVALUE(HANDLER, DFTI_PLACEMENT, DFTI_NOT_INPLACE)
             STATUS = DFTICOMMITDESCRIPTOR(HANDLER)
@@ -191,7 +211,8 @@ MODULE MATH
         END IF
         
         FFT_DIM(1) = L(1)
-        FFT_DIM(2) = L(3)
+        FFT_DIM(2) = L(2)
+        FFT_DIM(3) = L(3)
         FFT_LEN = L(1) * L(3)
     END SUBROUTINE FFT_ALLOC
     
@@ -200,6 +221,8 @@ MODULE MATH
         
         IF(FFT_ALLOCATED) THEN
             DEALLOCATE(PF_1D, SF_1D)
+            DEALLOCATE(SHIFT)
+            DEALLOCATE(SF2)
             STATUS = DFTIFREEDESCRIPTOR(HANDLER)
             FFT_ALLOCATED = .FALSE.
         END IF
@@ -209,8 +232,8 @@ MODULE MATH
     
     SUBROUTINE FFT(PF, SF)
         IMPLICIT NONE
-        REAL, INTENT(IN) :: PF(:, :, :)
-        COMPLEX, INTENT(OUT) :: SF(:, :, :)
+        REAL(8), INTENT(IN) :: PF(:, :, :)
+        COMPLEX(8), INTENT(OUT) :: SF(:, :, :)
         INTEGER J
         
         CALL FFT_ALLOC(SHAPE(PF))
@@ -219,22 +242,58 @@ MODULE MATH
             STATUS = DFTICOMPUTEFORWARD(HANDLER, PF_1D(1 : FFT_LEN), SF_1D(1 : FFT_LEN))
             SF(:, J, :) = RESHAPE(SF_1D, (/SIZE(SF, 1), SIZE(SF, 3)/))
         END DO
-        
+        CALL FFTSHIFT(SF)
     END SUBROUTINE FFT
     
     SUBROUTINE IFFT(SF, PF)
         IMPLICIT NONE
-        COMPLEX, INTENT(IN) :: SF(:, :, :)
-        REAL, INTENT(OUT) :: PF(:, :, :)
+        COMPLEX(8), INTENT(IN) :: SF(:, :, :)
+        REAL(8), INTENT(OUT) :: PF(:, :, :)
         INTEGER J
         
         CALL FFT_ALLOC(SHAPE(PF))
+        SF2(1:FFT_DIM(1), 1:FFT_DIM(2), 1:FFT_DIM(3)) = SF
+        CALL IFFTSHIFT(SF2(1:FFT_DIM(1), 1:FFT_DIM(2), 1:FFT_DIM(3)))
         DO J = 1, SIZE(PF, 2)
-            SF_1D(1 : FFT_LEN) = RESHAPE(SF(:, J, :), (/FFT_LEN/))
+            SF_1D(1 : FFT_LEN) = RESHAPE(SF2(1:FFT_DIM(1), J, 1:FFT_DIM(3)), (/FFT_LEN/))
             STATUS = DFTICOMPUTEBACKWARD(HANDLER, SF_1D(1 : FFT_LEN), PF_1D(1 : FFT_LEN))
             PF(:, J, :) = REAL(RESHAPE(PF_1D / SIZE(PF, 1) / SIZE(PF, 3), (/SIZE(PF, 1), SIZE(PF, 3)/)))
         END DO
         
     END SUBROUTINE IFFT
+    
+    SUBROUTINE FFTSHIFT(SF)
+        IMPLICIT NONE
+        COMPLEX(8), INTENT(INOUT) :: SF(:, :, :)
+        
+        INTEGER :: N1H, N3H, N1, N3
+        
+        N1 = SIZE(SF, 1)
+        N3 = SIZE(SF, 3)
+        N1H = SIZE(SF, 1) / 2
+        N3H = SIZE(SF, 3) / 2
+        
+        SHIFT(1 : N1H, :, :) = SF(N1 - N1H + 1 : N1, :, :)
+        SHIFT(N1H + 1 : N1, :, :) = SF(1 : N1 - N1H, :, :)
+        SF(:, :, 1 : N3H) = SHIFT(:, :, N3 - N3H + 1 : N3)
+        SF(:, :, N3H + 1 : N3) = SHIFT(:, :, 1 : N3 - N3H)
+    END SUBROUTINE FFTSHIFT
+    
+    SUBROUTINE IFFTSHIFT(SF)
+        IMPLICIT NONE
+        COMPLEX(8), INTENT(INOUT) :: SF(:, :, :)
+        
+        INTEGER :: N1H, N3H, N1, N3
+        
+        N1 = SIZE(SF, 1)
+        N3 = SIZE(SF, 3)
+        N1H = SIZE(SF, 1) / 2
+        N3H = SIZE(SF, 3) / 2
+        
+        SHIFT(:, :, 1 : N3 - N3H) = SF(:, :, N3H + 1 : N3)
+        SHIFT(:, :, N3 - N3H + 1 : N3) = SF(:, :, 1 : N3H)
+        SF(1 : N1 - N1H, :, :) = SHIFT(N1H + 1 : N1, :, :)
+        SF(N1 - N1H + 1 : N1, :, :) = SHIFT(1 : N1H, :, :)
+    END SUBROUTINE IFFTSHIFT
     
 END MODULE MATH

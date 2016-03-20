@@ -225,6 +225,7 @@ void check_flow_rate()
 void check_div()
 {
 	getdiv(u, v, w, dive, t);
+	dive.maxval();
 	divmax = 0;
 	for (size_t i = 1; i < n1 + 1; i++)
 		for (size_t j = 1; j < n2 + 1; j++)
@@ -247,6 +248,9 @@ void solveup()
 	getvel();
 	getpre();
 	update_up();
+	u.maxval();
+	v.maxval();
+	w.maxval();
 }
 
 void getvel()
@@ -254,9 +258,15 @@ void getvel()
 	update_bc();
 
 	getu();
+	du.maxval();
 	getv();
+	dv.maxval();
 	getw();
+	dw.maxval();
 	finish_vel();
+	du.maxval();
+	dv.maxval();
+	dw.maxval();
 
 	du += u;
 	dv += v;
@@ -273,7 +283,9 @@ void update_bc()
 void getpre()
 {
 	form_rp();
+	rp.maxval();
 	solve_dp();
+	dp.maxval();
 }
 
 void getu()

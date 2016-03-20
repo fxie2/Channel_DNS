@@ -52,6 +52,27 @@ public:
 	// Initialize functions
 	void setRand();
 	void setZero();
+	T maxval()
+	{
+		int mi, mj, mk;
+		T mx = _data[0];
+		for (size_t i = _dn1; i <= _up1; i++)
+		{
+			for (size_t j = _dn2; j <= _up2; j++)
+			{
+				for (size_t k = _dn3; k <= _up3; k++)
+				{
+					if (this->operator()(i, j, k) > mx)
+					{
+						mx = this->operator()(i, j, k);
+						mi = i; mj = j; mk = k;
+					}
+				}
+			}
+		}
+		std::cout << mi << '\t' << mj << '\t' << mk << '\t' << mx << endl;
+		return mx;
+	}
 	// IO functions
 	//friend std::ostream& operator<<(std::ostream& out, const Field3d<T>& field);
 	friend Field3d<T> operator+(const Field3d<T>& f1, const Field3d<T>& f2)

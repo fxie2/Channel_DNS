@@ -515,7 +515,7 @@ MODULE FIELD
                     !BOUNDARY TERM
                     BC_DN = DV(I, 1, K) * DY2DY(3, 2) / RE / 2 &
                           + DV(I, 1, K) * (V(I, 1, K) + V(I, 2, K)) / 2 / H(2) / 2
-                    H = H
+                    !H = H
                     DY2DY = DY2DY
                     BC_UP = DV(I, N2+1, K) * DY2DY(1, N2) / RE / 2 &
                           - DV(I, N2+1, K) * (V(I, N2+1, K) + V(I, N2, K)) / 2 / H(N2) / 2

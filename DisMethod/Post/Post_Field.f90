@@ -40,6 +40,7 @@ MODULE FIELD
     
     !TOTAL SHEAR
     REAL, SAVE, ALLOCATABLE :: SHEAR_HIST(:)
+    REAL, SAVE, ALLOCATABLE :: UTAU_HIST(:)
     
     !ALLOC IDENTIFIER
     LOGICAL, SAVE :: ALL_ALLOC = .FALSE.
@@ -53,15 +54,28 @@ MODULE FIELD
         INTEGER NUM
         CHARACTER(LEN = 128) U_INFILE, P_INFILE
         CHARACTER(LEN = 10) NUM_CHAR
+        LOGICAL U_EXIST, P_EXIST
         INTEGER I, J, K
         
         U = 0
         V = 0
         W = 0
+        U_EXIST = .FALSE.
+        P_EXIST = .FALSE.
         
         WRITE(NUM_CHAR, "(I10)") NUM
         U_INFILE = TRIM(ADJUSTL(DATA_PATH))//'U_'//TRIM(ADJUSTL(NUM_CHAR))//'.DAT'
         P_INFILE = TRIM(ADJUSTL(DATA_PATH))//'P_'//TRIM(ADJUSTL(NUM_CHAR))//'.DAT'
+        INQUIRE(FILE = U_INFILE, EXIST = U_EXIST)
+        INQUIRE(FILE = P_INFILE, EXIST = P_EXIST)
+
+        DO WHILE(.NOT. U_EXIST .OR. .NOT. P_EXIST)
+            PRINT*, 'WAITING ...'
+            CALL SLEEP(10)
+            INQUIRE(FILE = U_INFILE, EXIST = U_EXIST)
+            INQUIRE(FILE = P_INFILE, EXIST = P_EXIST)
+        END DO
+        
         OPEN(101, FILE = U_INFILE, STATUS = 'OLD', FORM = 'BINARY')
         READ(101) (((U(I, J, K), I = 1, N1), J = 1, N2), K = 1, N3)
         READ(101) (((V(I, J, K), I = 1, N1), J = 1, N2), K = 1, N3)
@@ -202,6 +216,7 @@ MODULE FIELD
             ALLOCATE(EPS(N1, N2, N3))
             ALLOCATE(Q(N1, N2, N3))
             ALLOCATE(SHEAR_HIST((END_NUM - START_NUM) / STEP + 1))
+            ALLOCATE(UTAU_HIST((END_NUM - START_NUM) / STEP + 1))
         
             ALL_ALLOC = .TRUE.
         END IF
@@ -220,7 +235,7 @@ MODULE FIELD
             DEALLOCATE(DURMS, DVRMS, DWRMS, DPRMS)
             DEALLOCATE(RES, RESAVEY)
             DEALLOCATE(SR, SRAVEY)
-            DEALLOCATE(TK, EPS, Q, SHEAR_HIST)
+            DEALLOCATE(TK, EPS, Q, SHEAR_HIST, UTAU_HIST)
             
             ALL_ALLOC = .FALSE.
         END IF
@@ -259,9 +274,9 @@ MODULE FIELD
                 DO I = 1, N1
                     
                     !VORX = DWDY - DVDZ
-                    W1 = (W(I, JM(J), K) + W(I, JM(J), KP(K))) / 2
+                    W1 = (W(I, JP(J), K) + W(I, JP(J), KP(K))) / 2
                     W2 = (W(I, J, K) + W(I, J, KP(K))) / 2
-                    W3 = (W(I, JP(J), K) + W(I, JP(J), KP(K))) / 2
+                    W3 = (W(I, JM(J), K) + W(I, JM(J), KP(K))) / 2
                     DWDY = W1 * DYH(1, J) + W2 * DYH(2, J) + W3 * DYH(3, J)
                     V1 = VC(I, J, KM(K))
                     V2 = VC(I, J, K)
@@ -276,9 +291,9 @@ MODULE FIELD
                     
                     !VORZ = DVDX - DUDY
                     DVDX = (V(IP(I), J, K) - V(IM(I), J, K)) / 2 / DX
-                    U1 = (U(I, JM(J), K) + U(IP(I), JM(J), K)) / 2
+                    U1 = (U(I, JP(J), K) + U(IP(I), JP(J), K)) / 2
                     U2 = (U(I, J, K) + U(IP(I), J, K)) / 2
-                    U3 = (U(I, JP(J), K) + U(IP(I), JP(J), K)) / 2
+                    U3 = (U(I, JM(J), K) + U(IP(I), JM(J), K)) / 2
                     DUDY = U1 * DYH(1, J) + U2 * DYH(2, J) + U3 * DYH(3, J)
                     VORZ(I, J, K) = DVDX - DUDY
                     
@@ -405,9 +420,9 @@ MODULE FIELD
                     DVDY = (V(I, JP(J), K) - V(I, J, K)) / DY(J)
                     DWDZ = (W(I, J, KP(K)) - W(I, J, K)) / DZ
                     
-                    U1 = (U(I, JM(J), K) + U(IP(I), JM(J), K)) / 2
+                    U1 = (U(I, JP(J), K) + U(IP(I), JP(J), K)) / 2
                     U2 = (U(I, J, K) + U(IP(I), J, K)) / 2
-                    U3 = (U(I, JP(J), K) + U(IP(I), JP(J), K)) / 2
+                    U3 = (U(I, JM(J), K) + U(IP(I), JM(J), K)) / 2
                     DUDY = U1 * DYH(1, J) + U2 * DYH(2, J) + U3 * DYH(3, J)
                     DUDZ = (UC(I, J, KP(K)) - UC(I, J, KM(K))) / 2 / DX
                     
@@ -415,9 +430,9 @@ MODULE FIELD
                     DVDZ = (VC(I, J, KP(K)) - VC(I, J, KM(K))) / 2 / DZ
                     
                     DWDX = (WC(IP(I), J, K) - WC(IM(I), J, K)) / 2 / DX
-                    W1 = (W(I, JM(J), K) + W(I, JM(J), KP(K))) / 2
+                    W1 = (W(I, JP(J), K) + W(I, JP(J), KP(K))) / 2
                     W2 = (W(I, J, K) + W(I, J, KP(K))) / 2
-                    W3 = (W(I, JP(J), K) + W(I, JP(J), KP(K))) / 2
+                    W3 = (W(I, JM(J), K) + W(I, JM(J), KP(K))) / 2
                     DWDY = W1 * DYH(1, J) + W2 * DYH(2, J) + W3 * DYH(3, J)
                     
                     SR(1, 1, I, J, K) = DUDX + DUDX

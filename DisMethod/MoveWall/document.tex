@@ -1,0 +1,119 @@
+\documentclass{ctexart}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{geometry}
+\geometry{left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
+\begin{document}
+	\title{曲线坐标公式推导}
+	\author{王罗浩}
+	\date{}
+	\maketitle
+	\section{预备公式}
+	\paragraph{}
+	槽道上下壁面均认为可以任意波动，其运动方程为：
+	\begin{equation}
+	y_d = -1 + \eta_d(x, z, t), \qquad y_u = 1 + \eta_u(x, z, t)
+	\end{equation}
+	其中$\eta_u, \eta_d$分别为上下壁面的位移大小。\\
+	定义：
+	\begin{equation}
+	\eta = \frac{1}{2}(\eta_u - \eta_d), \qquad \eta_0 = \frac{1}{2}(\eta_u + \eta_d)
+	\end{equation}
+	定义变换：
+	\begin{equation}
+	\left\{
+	\begin{aligned}
+	t &= \tau\\
+	x_1 &= \xi_1\\
+	x_2 &= \xi_2(1 + \eta)+\eta_0\\
+	x_3 &= \xi_3
+	\end{aligned}
+	\right.
+	\end{equation}
+	则有微分变换：
+	\begin{equation}
+	\left\{
+	\begin{aligned}
+	\frac{\partial}{\partial t} &= \frac{\partial}{\partial \tau} + \phi_t\frac{\partial}{\partial\xi_2}\\
+	\frac{\partial}{\partial x_i} &=
+	\frac{\partial}{\partial\xi_i} + \phi_i\frac{\partial}{\partial\xi_2}
+	\end{aligned}
+	\right.
+	\end{equation}
+	其中：
+	\begin{equation}
+	\phi_i = \varphi_i - \delta_{i2}
+	\end{equation},
+	\begin{equation}
+	\varphi_i=\left\{
+	\begin{aligned}
+	-&\frac{1}{1+\eta}(\xi_2\frac{\partial\eta}{\partial\xi_i}+\frac{\partial\eta_0}{\partial\xi_i}) &i&=1,3\\
+	&\frac{1}{1+\eta} &i&=2
+	\end{aligned}
+	\right.
+	\end{equation}
+	\begin{equation}
+	\varphi_t = -\frac{1}{1+\eta}(\xi_2\frac{\partial\eta}{\partial\tau} + \frac{\partial\eta_0}{\partial\tau})
+	\end{equation}
+	由以上公式可以推得以下常用的公式：
+	\begin{equation}
+	\frac{\partial\phi_i}{\partial\xi_2} = 
+	\left\{
+	\begin{aligned}
+	-&\frac{1}{1+\eta}\frac{\partial\eta}{\partial\xi_i} \qquad &i&=1,3\\
+	&0 \qquad &i&=2
+	\end{aligned}
+	\right.
+	\end{equation}
+	\begin{equation}
+	\frac{\partial\phi_i}{\partial\xi_i} = 
+	\left\{
+	\begin{aligned}
+	-&\frac{1}{(1+\eta)^2}((\xi_2\frac{\partial^2\eta}{\partial \xi_i^2}+\frac{\partial^2\eta_0}{\partial\xi_i^2})(1+\eta) - \frac{\partial\eta}{\partial\xi_i}(\xi_2\frac{\partial\eta}{\partial\xi_i}+\frac{\partial\eta_0}{\partial\xi_i}))\qquad &i&=1,3\\
+	&0\qquad &i&=2
+	\end{aligned}
+	\right.
+	\end{equation}
+	\section{动量方程}
+	\subsection{X方向动量方程}
+	\begin{equation}
+	\begin{split}
+	&\frac{u^{n+1} - u^n}{\varDelta\tau} + \phi_t^n\frac{\partial u^n}{\partial \xi_2} + \frac{1}{2}(\frac{\partial u^nu^{n+1}}{\partial\xi_1} + \frac{\partial v^nu^{n+1}}{\partial\xi_2} + \frac{\partial w^nu^{n+1}}{\partial\xi_3}) \\+& \frac{1}{2}(\frac{\partial u^nu^{n+1}}{\partial\xi_1}+\frac{\partial u^nv^{n+1}}{\partial \xi_2} + \frac{\partial u^nw^{n+1}}{\partial\xi_3}) \\+& \frac{1}{2}(\phi_1^n\frac{\partial u^nu^{n+1}}{\partial\xi_2} + \phi_2^n\frac{\partial v^nu^{n+1}}{\partial\xi_2} + \phi_3^n\frac{\partial w^nu^{n+1}}{\partial\xi_2}) \\+& \frac{1}{2}(\phi_1^{n+1}\frac{\partial u^nu^{n+1}}{\partial\xi_2} + \phi_2^{n+1}\frac{\partial u^nv^{n+1}}{\partial\xi_2} + \phi_3^{n+1}\frac{\partial u^nw^{n+1}}{\partial\xi_3}) \\=& -\frac{\partial p}{\partial \xi_1} - \phi_1^{n+1/2}\frac{\partial p}{\partial \xi_2} + \frac{1}{2Re}(\varDelta u^n + \varDelta u^{n+1})
+	\end{split}
+	\end{equation}
+	整理各项，得：
+	\begin{equation}
+	\begin{split}
+	I + M_{11}^1 \qquad &\quad (\frac{u^{n+1}}{\varDelta\tau} + \frac{\partial u^nu^{n+1}}{\partial\xi_1} - \frac{1}{2Re}\frac{\partial^2u^{n+1}}{\partial\xi_1^2})\\
+	M_{11}^2 \qquad & +\frac{1}{2}(\frac{\partial v^nu^{n+1}}{\partial \xi_2} + (\phi_1^n + \phi_1^{n+1})\frac{\partial u^nu^{n+1}}{\partial \xi_2} + \phi_2^n\frac{\partial v^nu^{n+1}}{\partial\xi_2} + \phi_3^n\frac{\partial w^nu^{n+1}}{\partial\xi_2} -\frac{1}{Re}\varDelta u^{n+1})\\
+	M_{11}^3 \qquad & +\frac{1}{2}(\frac{\partial w^nu^{n+1}}{\partial\xi_3} - \frac{\partial^2u^{n+1}}{\partial\xi_3^2})\\
+	Possion \qquad & +(\frac{\partial p}{\partial\xi_1} + \phi_1^{n+1/2}\frac{\partial p}{\partial\xi_2})\\
+	M_{12} \qquad & +\frac{1}{2}(\frac{\partial u^nv^{n+1}}{\partial\xi_2} + \phi_2^{n+1}\frac{\partial u^nv^{n+1}}{\partial\xi_2})\\
+	M_{13} \qquad & +\frac{1}{2}(\frac{\partial u^nw^{n+1}}{\partial\xi_3} + \phi_3^{n+1}\frac{\partial u^nw^{n+1}}{\partial\xi_2})\\
+	R \qquad & = \frac{u^n}{\varDelta\tau} - \phi_t^n\frac{\partial u^n}{\partial\xi_2} + \frac{1}{2Re}\varDelta u^n + \frac{1}{2Re}2\phi_i\frac{\partial^2u^{n+1}}{\partial\xi_2\partial\xi_i}
+	\end{split}
+	\end{equation}
+	为达到计算二阶精度，在算法中需做如下的分步变换：
+	\begin{equation}
+	\boldsymbol{u}^{n+1} = \boldsymbol{u}^* - \varDelta tG\delta p \qquad \delta \boldsymbol{u} = \boldsymbol{u}^* - \boldsymbol{u}^n
+	\end{equation}
+	之后，原方程可继续化简为：
+	\begin{equation}
+	\begin{split}
+	\frac{\delta u}{\varDelta\tau} + N(\delta u) -\frac{1}{2Re}\varDelta \delta u= -Gp^{n+1/2} - \phi_t^n\frac{\partial u^n}{\partial\xi_2} - N(u^n) + \frac{1}{Re}\varDelta u^n
+	\end{split}
+	\end{equation}
+	其中$\varDelta \delta u$项中的交叉导数项$\displaystyle2\phi_i\frac{\partial^2\delta u^{n+1}}{\partial\xi_2\partial\xi_i}$需提至右侧进行迭代处理。\\
+	此时相应的右端项为：
+	\begin{equation}
+	R \qquad -Gp^{n+1/2} - \phi_t^n\frac{\partial u^n}{\partial\xi_2} - N(u^n) + \frac{1}{Re}\varDelta u^n + \frac{1}{2Re}2\phi_i\frac{\partial^2\delta u^{n+1}}{\partial\xi_2\partial\xi_i} + b.c.
+	\end{equation}
+	其中边界条件项由以下各项在边界处的值组成：
+	\begin{equation}
+	\begin{split}
+	M_{11}^2 \qquad & \frac{1}{2}(\frac{\partial v^nu^{n+1}}{\partial \xi_2} + (\phi_1^n + \phi_1^{n+1})\frac{\partial u^nu^{n+1}}{\partial \xi_2} + \phi_2^n\frac{\partial v^nu^{n+1}}{\partial\xi_2} + \phi_3^n\frac{\partial w^nu^{n+1}}{\partial\xi_2} -\frac{1}{Re}\varDelta u^{n+1})\\
+	M_{12} \qquad & \frac{1}{2}(\frac{\partial u^nv^{n+1}}{\partial\xi_2} + \phi_2^{n+1}\frac{\partial u^nv^{n+1}}{\partial\xi_2})\\
+	M_{13} \qquad & \frac{1}{2} \phi_3^{n+1}\frac{\partial u^nw^{n+1}}{\partial\xi_2}\\
+	\end{split}
+	\end{equation}
+\end{document}

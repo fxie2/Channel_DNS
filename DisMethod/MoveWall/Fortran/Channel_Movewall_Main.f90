@@ -14,35 +14,46 @@ PROGRAM CHANNEL_MAIN
     !INIT FIELD
     CALL ALLOC_FIELD()
     CALL INIUP()
-    
-    CALL CHECK_DIV()
-    CALL CHECK_CFL()
+    CALL CHECK_DIV
     CALL CHECK_FLOW_RATE
     PRINT*, XFLOW, ZFLOW
     PRINT*, DIVMAX
-    PRINT*, CFLMAX
-    U = U
-    W = W
-    V = V
-    P = P
+    
+    !OPEN LOG FILE
+    OPEN(200, FILE = TRIM(ADJUSTL(LOG_FILE_PATH))//'LOG.TXT', STATUS = 'REPLACE')
+    
     DO WHILE(CURNT_STEP_NUM < TOTAL_STEP_NUM)
         
         CALL SOLVEUP()
-        U = U
-        V = V
-        W = W
-        P = P
-        CALL CHECK_DIV()
-        CALL CHECK_FLOW_RATE()
-        PRINT*, 'TIME : ', T
-        WRITE(*, 100) 'DIVMAX : ', DIVMAX
-        WRITE(*, 100) 'PGX    : ', PGX
-        WRITE(*, 100) 'PGZ    : ', PGZ
-        WRITE(*, 100) 'XFLOW  : ', XFLOW
-        WRITE(*, 100) 'ZFLOW  : ', ZFLOW
-100     FORMAT(A10, E25.8) 
-        READ*
-        PRINT*
+        PRINT*, 'ITER : ' , SOLVE_ITER
+        IF(MOD(CURNT_STEP_NUM, 1) == 0) THEN
+            CALL CHECK_DIV()
+            CALL CHECK_FLOW_RATE()
+            
+            WRITE(*, 100) 'TIME   : ', T
+            WRITE(*, 100) 'DIVMAX : ', DIVMAX
+            WRITE(*, 100) 'PGX    : ', PGX
+            WRITE(*, 100) 'PGZ    : ', PGZ
+            WRITE(*, 100) 'XFLOW  : ', XFLOW
+            WRITE(*, 100) 'ZFLOW  : ', ZFLOW
+            WRITE(*, 100) 'ITER   : ', DBLE(SOLVE_ITER)
+            WRITE(*, 110) REPEAT('-', 10), T / END_TIME * 100, '%', REPEAT('-', 10)
+            
+            WRITE(200, 100) 'TIME   : ', T
+            WRITE(200, 100) 'DIVMAX : ', DIVMAX
+            WRITE(200, 100) 'PGX    : ', PGX
+            WRITE(200, 100) 'PGZ    : ', PGZ
+            WRITE(200, 100) 'XFLOW  : ', XFLOW
+            WRITE(200, 100) 'ZFLOW  : ', ZFLOW
+            WRITE(200, *)
+            
+100         FORMAT(A10, E15.8)
+110         FORMAT(A10, F4.1, A1, A10)            
+            PRINT*
+        END IF
+        
+        IF(MOD(CURNT_STEP_NUM, SAVE_PERIOD) == 0) CALL OUTPUT
+
         CURNT_STEP_NUM = CURNT_STEP_NUM + 1
         T = T + DT
     END DO

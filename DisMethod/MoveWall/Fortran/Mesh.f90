@@ -72,11 +72,10 @@ MODULE MESH
         !OPEN(100, FILE=GRID_FILE_PATH, STATUS = 'OLD')
         !READ(100, *) (Y(I), I = 0, N2)
         !CLOSE(100)
-        DO I = 0, N2
-            Y(I) = -COS(PI * I / N2)
+        DO I = 1, N2
+            Y(I) = I * 2.0 / N2
         END DO
-        
-        Y = Y + 1
+        Y(0) = 0
         
         !SCALE MESH TO Y IN [-1, 1]
         SCALE = 2 / (Y(N2) - Y(0))
@@ -119,18 +118,22 @@ MODULE MESH
             DYDY(1, J) = DY(J) * DY(JM(J)) / (DY(J) + DY(JM(J))) / DY(J) / DY(J)
             DYDY(2, J) = DY(J) * DY(JM(J)) / (DY(J) + DY(JM(J))) * (1 / DY(JM(J)) / DY(JM(J)) - 1 / DY(J) / DY(J))
             DYDY(3, J) = DY(J) * DY(JM(J)) / (DY(J) + DY(JM(J))) / DY(JM(J)) / DY(JM(J)) * -1.0
-            DY2H(1, J) = 2 / (H(J) + H(JP(J))) / H(JP(J))
-            DY2H(2, J) = 2 / (H(J) + H(JP(J))) * -(1 / H(JP(J)) + 1 / H(J))
-            DY2H(3, J) = 2 / (H(J) + H(JP(J))) / H(J)
+            !DY2H(1, J) = 2 / (H(J) + H(JP(J))) / H(JP(J))
+            !DY2H(2, J) = 2 / (H(J) + H(JP(J))) * -(1 / H(JP(J)) + 1 / H(J))
+            !DY2H(3, J) = 2 / (H(J) + H(JP(J))) / H(J)
+            DY2H(1, J) = 1.0 / H(JP(J)) / DY(J)
+            DY2H(2, J) = -(H(JP(J)) + H(J)) / H(JP(J)) / H(J) / DY(J)
+            DY2H(3, J) = 1.0 / H(J) / DY(J)
             DYH(1, J) = H(J) * H(JP(J)) / (H(J) + H(JP(J))) / H(JP(J)) / H(JP(J))
             DYH(2, J) = H(J) * H(JP(J)) / (H(J) + H(JP(J))) * (1 / H(J) / H(J) - 1 / H(JP(J)) / H(JP(J)))
             DYH(3, J) = H(J) * H(JP(J)) / (H(J) + H(JP(J))) / H(J) / H(J) * -1.0
         END DO
+        CALL UPDATE_MESH
     END SUBROUTINE INIT_MESH
     
     SUBROUTINE UPDATE_MESH()
         IMPLICIT NONE
-        IF(T <= DEVELOP_TIME) THEN
+        IF(T <= DEVELOP_TIME .AND. .FALSE.) THEN
             UP_WAVE_AMPX = T / DEVELOP_TIME * MAX_UP_AMPX
             UP_WAVE_AMPZ = T / DEVELOP_TIME * MAX_UP_AMPZ
             DN_WAVE_AMPX = T / DEVELOP_TIME * MAX_DN_AMPX
@@ -140,6 +143,10 @@ MODULE MESH
             DDT_DN_AMPX = MAX_DN_AMPX / DEVELOP_TIME
             DDT_DN_AMPZ = MAX_DN_AMPZ / DEVELOP_TIME
         ELSE
+            UP_WAVE_AMPX = MAX_UP_AMPX
+            UP_WAVE_AMPZ = MAX_UP_AMPZ
+            DN_WAVE_AMPX = MAX_DN_AMPX
+            DN_WAVE_AMPZ = MAX_DN_AMPZ
             DDT_UP_AMPX = 0
             DDT_UP_AMPZ = 0
             DDT_DN_AMPX = 0
@@ -175,6 +182,7 @@ MODULE MESH
                 +  DN_WAVE_AMPX * DN_WAVE_NUMX * COS(DN_WAVE_NUMX * X - DN_WAVE_PSDX * T)) / 2
         
         PHI1 = -(Y * DETADX + DETA0DX) / (1 + ETA)
+
     END FUNCTION PHI1
     
     REAL FUNCTION PHI2(X, Y, Z, T)
@@ -233,7 +241,7 @@ MODULE MESH
                 +  DN_WAVE_AMPX * DN_WAVE_PSDX * COS(DN_WAVE_NUMX * X - DN_WAVE_PSDX * T)    &
                 +  DN_WAVE_AMPZ * DN_WAVE_PSDZ * COS(DN_WAVE_NUMZ * Z - DN_WAVE_PSDZ * T)) / 2
         
-        PHIT = -(Y * DETADT + DETA0DT) / (1 + ETA)
+        PHIT = (Y * DETADT + DETA0DT) / (1 + ETA)
     END FUNCTION PHIT
     
     REAL FUNCTION DPHI1DY(X, Y, Z, T)

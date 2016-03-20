@@ -2,11 +2,13 @@ MODULE FIELD
     USE GLOBAL_PARAMETER
     USE MESH
     USE MATH
+    USE DEBUG
     IMPLICIT NONE
     
     REAL, SAVE, ALLOCATABLE :: U(:, :, :), V(:, :, :), W(:, :, :), P(:, :, :)
     REAL, SAVE, ALLOCATABLE :: DU(:, :, :), DV(:, :, :), DW(:, :, :), DP(:, :, :)
-    COMPLEX, SAVE, ALLOCATABLE :: DIVS(:, :, :), DPS(:, :, :)
+    COMPLEX, SAVE, ALLOCATABLE :: DIVS(:, :, :), DPS(:, :, :), PBS(:, :, :)
+    REAL, SAVE, ALLOCATABLE :: PB(:, :, :)
     REAL, SAVE, ALLOCATABLE :: DUHIST(:, :, :), DVHIST(:, :, :), DWHIST(:, :, :), DPHIST(:, :, :)
     REAL, SAVE, ALLOCATABLE, TARGET :: R(:, :, :)
     REAL, SAVE, POINTER :: R1(:, :, :), R2(:, :, :), R3(:, :, :), RP(:, :, :)
@@ -16,6 +18,9 @@ MODULE FIELD
     REAL, SAVE :: XFLOW, ZFLOW
     REAL, SAVE :: DIVMAX
     REAL, SAVE :: CFLMAX
+    
+    !DEBUG INFO
+    INTEGER SOLVE_ITER
     
     !SUPPLIMENTAL VECTOR
     !FACTOR VECTOR FOR TD & CTD SOLVER
@@ -28,7 +33,7 @@ MODULE FIELD
     
     PRIVATE ALL_ALLOCATED, DU, DV, DW, DP, R, R1, R2, R3, RP
     PRIVATE NMFAC, NCFAC, NPFAC, FAC_ALLOCATED, FAC_LEN
-    PRIVATE DIVS, DPS
+    PRIVATE DIVS, DPS, PB, PBS
     PRIVATE DUHIST, DVHIST, DWHIST, DPHIST
     
     CONTAINS
@@ -45,6 +50,8 @@ MODULE FIELD
         ALLOCATE(DW(N1, 0:N2+1, N3))
         ALLOCATE(DP(N1, N2, N3))
         ALLOCATE(DPS(N1, N2, N3))
+        ALLOCATE(PB(N1, 2, N3))
+        ALLOCATE(PBS(N1, 2, N3))
         ALLOCATE(DIVS(N1, N2, N3))
         ALLOCATE(DUHIST(N1, 0:N2+1, N3))
         ALLOCATE(DVHIST(N1, 1:N2+1, N3))
@@ -58,6 +65,7 @@ MODULE FIELD
         IMPLICIT NONE
         DEALLOCATE(U, V, W, P, DIV)
         DEALLOCATE(DU, DV, DW, DP)
+        DEALLOCATE(DPS, PB, PBS, DIVS)
         DEALLOCATE(DUHIST, DVHIST, DWHIST, DPHIST)
         DEALLOCATE(R)
         ALL_ALLOCATED = .FALSE.
@@ -254,6 +262,7 @@ MODULE FIELD
         REAL, INTENT(OUT) :: DDIV(:, :, :)
         REAL XC, YC, ZC
         REAL DUDY, DVDY, DWDY
+        REAL U1, U2, U3, W1, W2, W3
         INTEGER I, J, K
         
         DO K = 1, N3
@@ -262,11 +271,20 @@ MODULE FIELD
                 YC = (Y(J - 1) + Y(J)) / 2
                 DO I = 1, N1
                     XC = (X(I - 1) + X(I)) / 2
-                    DUDY = ((UU(I, JP(J), K) + UU(IP(I), JP(J), K)) / 2   &
-                         -  (UU(I, J, K) + UU(IP(I), J, K)) / 2) / H(JP(J))
+                    !DUDY = ((UU(I, JP(J), K) + UU(IP(I), JP(J), K)) / 2   &
+                    !     -  (UU(I, J, K) + UU(IP(I), J, K)) / 2) / H(JP(J))
+                    !DVDY = (VV(I, JP(J), K) - VV(I, J, K)) / DY(J)
+                    !DWDY = ((WW(I, JP(J), K) + WW(I, JP(J), KP(K))) / 2   &
+                    !     -  (WW(I, J, K) + WW(I, J, KP(K))) / 2) / H(JP(J))
+                    U1 = (UU(I, JP(J), K) + UU(IP(I), JP(J), K)) / 2
+                    U2 = (UU(I, J, K) + UU(IP(I), J, K)) / 2
+                    U3 = (UU(I, JM(J), K) + UU(I, JM(J), K)) / 2
+                    DUDY = U1 * DYH(1, J) + U2 * DYH(2, J) + U3 * DYH(3, J)
+                    W1 = (WW(I, JP(J), K) + WW(I, JP(J), KP(K))) / 2
+                    W2 = (WW(I, J, K) + WW(I, J, KP(K))) / 2
+                    W3 = (WW(I, JM(J), K) + WW(I, JM(J), KP(K))) / 2
+                    DWDY = W1 * DYH(1, J) + W2 * DYH(2, J) + W3 * DYH(3, J)
                     DVDY = (VV(I, JP(J), K) - VV(I, J, K)) / DY(J)
-                    DWDY = ((WW(I, JP(J), K) + WW(I, JP(J), KP(K))) / 2   &
-                         -  (WW(I, J, K) + WW(I, J, KP(K))) / 2) / H(JP(J))
                     DDIV(I, J, K) = (UU(IP(I), J, K) - UU(I, J, K)) / DX    &
                                   + (VV(I, JP(J), K) - VV(I, J, K)) / DY(J) &
                                   + (WW(I, J, KP(K)) - WW(I, J, K)) / DZ    &
@@ -306,6 +324,7 @@ MODULE FIELD
     
     SUBROUTINE SOLVEUP()
         IMPLICIT NONE
+        CALL UPDATE_MESH
         CALL GETVEL()
         CALL GETPRE()
         CALL UPDATE_UP()
@@ -314,9 +333,10 @@ MODULE FIELD
     SUBROUTINE GETVEL()
         IMPLICIT NONE
         
-        INTEGER :: ITER = 0
+        INTEGER :: ITER
         REAL :: ERR = 0
         
+        ITER = 0
         CALL UPDATE_BC()
         
         DO WHILE(.TRUE.)
@@ -329,8 +349,11 @@ MODULE FIELD
             CALL GETW()
             CALL FINISH_VEL(ERR)
             ITER = ITER + 1
+            PRINT*, 'ERR : ', ERR
             IF(ERR < MAX_SOLVE_ERR .OR. ITER > MAX_SOLVE_ITER) EXIT
         END DO
+
+        SOLVE_ITER = ITER
         
         DU = DU + U
         DV = DV + V
@@ -346,6 +369,8 @@ MODULE FIELD
         DU = 0
         DV = 0
         DW = 0
+        
+        !WARNING : ALL BOUNDARY VELOCITY ASSUMES AMPTITUDE IS LINEARLY INCREASED (A_tt = 0)
         
         DO K = 1, N3
             ZC = (Z(K) + Z(K - 1)) / 2
@@ -376,6 +401,29 @@ MODULE FIELD
             END DO
         END DO
         
+        !PRESSURE BOUNDARY
+        DO K = 1, N3
+            ZC = (Z(K) + Z(K - 1)) / 2
+            DO I = 1, N1
+                XC = (X(I) + X(I - 1)) / 2
+                
+                !DOWN WALL D_V / D_T
+                PB(I, 1, K) = (DDT_DN_AMPX * DN_WAVE_PSDX * COS(DN_WAVE_NUMX * XC - DN_WAVE_PSDX * (T + DT))    &
+                            +  DDT_DN_AMPZ * DN_WAVE_PSDZ * COS(DN_WAVE_NUMZ * ZC - DN_WAVE_PSDZ * (T + DT))) * -2.0&
+                            -  DN_WAVE_PSDX ** 2 * DN_WAVE_AMPX * SIN(DN_WAVE_NUMX * XC - DN_WAVE_PSDX * (T + DT))  &
+                            -  DN_WAVE_PSDZ ** 2 * DN_WAVE_AMPZ * SIN(DN_WAVE_NUMZ * ZC - DN_WAVE_PSDZ * (T + DT))
+                PB(I, 1, K) = PB(I, 1, K) / (1 + PHI2(XC, Y(0), ZC, T + DT))
+                
+                !UP WALL D_V / D_T
+                PB(I, 2, K) = (DDT_UP_AMPX * UP_WAVE_PSDX * COS(UP_WAVE_NUMX * XC - UP_WAVE_PSDX * (T + DT))    &
+                            +  DDT_UP_AMPZ * UP_WAVE_PSDZ * COS(UP_WAVE_NUMZ * ZC - UP_WAVE_PSDZ * (T + DT))) * -2.0&
+                            -  UP_WAVE_PSDX ** 2 * UP_WAVE_AMPX * SIN(UP_WAVE_NUMX * XC - UP_WAVE_PSDX * (T + DT))  &
+                            -  UP_WAVE_PSDZ ** 2 * UP_WAVE_AMPZ * SIN(UP_WAVE_NUMZ * ZC - UP_WAVE_PSDZ * (T + DT))
+                PB(I, 2, K) = PB(I, 2, K) / (1 + PHI2(XC, Y(N2), ZC, T + DT))
+            END DO
+        END DO
+        
+        CALL FFT(PB, PBS)
     END SUBROUTINE UPDATE_BC
     
     SUBROUTINE GETPRE()
@@ -510,7 +558,6 @@ MODULE FIELD
     SUBROUTINE FORM_R1()
         IMPLICIT NONE
         REAL VISCOS, CROSS, NONLIN, PRESSG
-        REAL BC_DN, BC_UP, BCOND
         REAL DUDX(3), DUDZ(3), DUDY
         REAL DUUDX, DUVDY, DUWDZ, DUUDY, DUWDY
         REAL U1, U2, V1, V2, W1, W2, W_UP, W_MI, W_DN
@@ -611,8 +658,7 @@ MODULE FIELD
                     !PRESSURE TERM
                     PRESSG = (P(I, J, K) - P(IM(I), J, K)) / DX + PGX
                     
-                    !BOUNDARY TERM
-                    BC_DN = 
+                    !BOUNDARY TERM IS CALCULATED IN SOLVE ROUTINE
                     
                     !FORM R1 TERM
                     R1(I, J, K) = VISCOS + CROSS - PHIT(XC, YC, ZC, T) * DUDY * DT - NONLIN * DT - PRESSG * DT
@@ -897,7 +943,7 @@ MODULE FIELD
             END DO
         END DO
     END SUBROUTINE FORM_R3
-    
+
     SUBROUTINE SOLVE_UH()
         IMPLICIT NONE
         
@@ -970,6 +1016,10 @@ MODULE FIELD
                 NCFAC = NCFAC / 2 * DT + 1
                 NMFAC = NMFAC / 2 * DT
                 
+                !BOUNDARY TERM CORRECT
+                R1(I, 1, K) = R1(I, 1, K) - NMFAC(1) * DU(I, 0, K)
+                R1(I, N2, K) = R1(I, N2, K) - NPFAC(N2) * DU(I, N2+1, K)
+                
                 CALL TDMA(NMFAC, NCFAC, NPFAC, DU(I, 1 : N2, K), R1(I, 1 : N2, K))
             END DO
         END DO
@@ -984,20 +1034,21 @@ MODULE FIELD
                 DO I = 1, N1
                     
                     !TIME ADVANCE TERM
-                    NCFAC(I) = 1
+                    !NCFAC(I) = 1
                     
                     !D_U^N_U^NP_DX
                     U1 = (U(IM(I), J, K) + U(I, J, K)) / 2
                     U2 = (U(IP(I), J, K) + U(I, J, K)) / 2
-                    NPFAC(I) = NPFAC(I) + U2 / 2 / DX * DT
-                    NCFAC(I) = NCFAC(I) + (U2 - U1) / 2 / DX * DT
-                    NMFAC(I) = NMFAC(I) - U1 / 2 / DX * DT
+                    NPFAC(I) = U2 / 2 / DX * DT
+                    NCFAC(I) = (U2 - U1) / 2 / DX * DT
+                    NMFAC(I) = -U1 / 2 / DX * DT
                     
                     !VISCOS TERM
                     NPFAC(I) = NPFAC(I) - 1 / DX / DX / 2 / RE * DT
                     NCFAC(I) = NCFAC(I) + 1 / DX / DX / RE * DT
                     NMFAC(I) = NMFAC(I) - 1 / DX / DX / 2 / RE * DT
                 END DO
+                NCFAC(1:N1) = NCFAC(1:N1) + 1
                 CALL CTDMA(NMFAC, NCFAC, NPFAC, DU(1:N1, J, K), DU(1:N1, J, K))
             END DO
         END DO
@@ -1101,6 +1152,10 @@ MODULE FIELD
                 NPFAC = NPFAC * DT
                 NCFAC = NCFAC * DT + 1
                 NMFAC = NMFAC * DT
+                
+                !BOUNDARY TERM CORRECT
+                R2(I, 2, K) = R2(I, 2, K) - NMFAC(2) * DV(I, 1, K)
+                R2(I, N2, K) = R2(I, N2, K) - NPFAC(N2) * DV(I, N2+1, K)
                 
                 CALL TDMA(NMFAC(2:N2), NCFAC(2:N2), NPFAC(2:N2), DV(I, 2:N2, K), R2(I, 2:N2, K))
             END DO
@@ -1235,6 +1290,10 @@ MODULE FIELD
                 NCFAC = NCFAC / 2 * DT + 1
                 NMFAC = NMFAC / 2 * DT
                 
+                !BOUNDARY TERM CORRECT
+                R3(I, 1, K) = R3(I, 1, K) - NMFAC(1) * DW(I, 0, K)
+                R3(I, N2, K) = R3(I, N2, K) - NPFAC(N2) * DW(I, N2+1, K)
+                
                 CALL TDMA(NMFAC, NCFAC, NPFAC, DW(I, 1 : N2, K), R3(I, 1 : N2, K))
             END DO
         END DO
@@ -1277,20 +1336,21 @@ MODULE FIELD
                 DO K = 1, N3
                     
                     !TIME ADVANCE TERM
-                    NCFAC(K) = 1
+                    !NCFAC(K) = 1
                     
                     !D_W^N_W^NP_DZ
                     W1 = (W(I, J, KM(K)) + W(I, J, K)) / 2
                     W2 = (W(I, J, KP(K)) + W(I, J, K)) / 2
-                    NPFAC(K) = NPFAC(K) + W2 / 2 / DZ * DT
-                    NCFAC(K) = NCFAC(K) + (W2 - W1) / 2 / DZ * DT
-                    NMFAC(K) = NMFAC(K) - W1 / 2 / DZ
+                    NPFAC(K) = W2 / 2 / DZ * DT
+                    NCFAC(K) = (W2 - W1) / 2 / DZ * DT
+                    NMFAC(K) = -W1 / 2 / DZ * DT
                     
                     !VISCOS TERM
                     NPFAC(K) = NPFAC(K) - 1 / DZ / DZ / 2 / RE * DT
                     NCFAC(I) = NCFAC(K) + 1 / DZ / DZ / RE * DT
                     NMFAC(I) = NMFAC(K) - 1 / DZ / DZ / 2 / RE * DT
                 END DO
+                NCFAC(1:N3) = NCFAC(1:N3) + 1
                 CALL CTDMA(NMFAC, NCFAC, NPFAC, DW(I, J, 1:N3), DW(I, J, 1:N3))
             END DO
         END DO
@@ -1320,50 +1380,103 @@ MODULE FIELD
         
         DO K = 1, N3
             ZC = (Z(K) + Z(K - 1)) / 2
-            N = K - 1
+            N = K - 1 - N3 / 2
             DO I = 1, N1
                 XC = (X(I) + X(I - 1)) / 2
-                M = I - 1
-                DO J = 1, N2
+                M = I - 1 - N1 / 2
+                DO J = 2, N2 - 1
                     YC = (Y(J) + Y(J - 1)) / 2
                     
                     !D2_DY2 FACTOR
-                    D2FAC = 1 + PHI2(XC, YC, ZC, T + DT) + PHI2(XC, YC, ZC, T + DT / 2) &
-                          + PHI1(XC, YC, ZC, T + DT) * PHI1(XC, YC, ZC, T + DT / 2)     &
-                          + PHI2(XC, YC, ZC, T + DT) * PHI2(XC, YC, ZC, T + DT / 2)     &
-                          + PHI3(XC, YC, ZC, T + DT) * PHI3(XC, YC, ZC, T + DT / 2)
+                    D2FAC = 1 + PHI2(XC, YC, ZC, T + DT) * 2 &
+                          + PHI1(XC, YC, ZC, T + DT) * PHI1(XC, YC, ZC, T + DT)     &
+                          + PHI2(XC, YC, ZC, T + DT) * PHI2(XC, YC, ZC, T + DT)     &
+                          + PHI3(XC, YC, ZC, T + DT) * PHI3(XC, YC, ZC, T + DT)
                           
                     !D_DY FACTOR
-                    DFAC = DPHI1DX(XC, YC, ZC, T + DT / 2)  &
-                         + DPHI2DY(XC, YC, ZC, T + DT / 2)  &
-                         + DPHI3DZ(XC, YC, ZC, T + DT / 2)  &
-                         + II * ALPHA * M * PHI1(XC, YC, ZC, T + DT / 2)    &
-                         + II * BETA  * N * PHI3(XC, YC, ZC, T + DT / 2)    &
-                         + II * ALPHA * M * PHI1(XC, YC, ZC, T + DT)        &
-                         + II * BETA  * N * PHI3(XC, YC, ZC, T + DT)        &
-                         + PHI1(XC, YC, ZC, T + DT) * DPHI1DY(XC, YC, ZC, T + DT / 2)   &
-                         + PHI2(XC, YC, ZC, T + DT) * DPHI2DY(XC, YC, ZC, T + DT / 2)   &
-                         + PHI3(XC, YC, ZC, T + DT) * DPHI3DY(XC, YC, ZC, T + DT / 2)
+                    DFAC = DPHI1DX(XC, YC, ZC, T + DT)  &
+                         + DPHI2DY(XC, YC, ZC, T + DT)  &
+                         + DPHI3DZ(XC, YC, ZC, T + DT)  &
+                         + II * SIN(ALPHA * M * DX) / DX * PHI1(XC, YC, ZC, T + DT) * 2 &
+                         + II * SIN(BETA  * N * DZ) / DZ * PHI3(XC, YC, ZC, T + DT) * 2 &
+                         + PHI1(XC, YC, ZC, T + DT) * DPHI1DY(XC, YC, ZC, T + DT)   &
+                         + PHI2(XC, YC, ZC, T + DT) * DPHI2DY(XC, YC, ZC, T + DT)   &
+                         + PHI3(XC, YC, ZC, T + DT) * DPHI3DY(XC, YC, ZC, T + DT)
                     
                     !Y FACTOR
-                    FAC = -(ALPHA * ALPHA * M * M + BETA * BETA * N * N)
+                    FAC = 2 * (COS(ALPHA * M * DX) - 1) / DX / DX + 2 * (COS(BETA * N * DZ) - 1) / DZ / DZ
                     
                     PPFAC(J) = DY2H(1, J) * D2FAC + DYH(1, J) * DFAC
                     PCFAC(J) = DY2H(2, J) * D2FAC + DYH(2, J) * DFAC + FAC
                     PMFAC(J) = DY2H(3, J) * D2FAC + DYH(3, J) * DFAC
                 END DO
                 
-                PCFAC(1) = PCFAC(1) + PMFAC(1)
-                PCFAC(N2) = PCFAC(N2) + PPFAC(N2)
+                !J = 1
+                YC = (Y(1) + Y(0)) / 2
                 
+                D2FAC = 1 + PHI2(XC, YC, ZC, T + DT) * 2 &
+                      + PHI1(XC, YC, ZC, T + DT) * PHI1(XC, YC, ZC, T + DT) &
+                      + PHI2(XC, YC, ZC, T + DT) * PHI2(XC, YC, ZC, T + DT) &
+                      + PHI3(XC, YC, ZC, T + DT) * PHI3(XC, YC, ZC, T + DT)
+                
+                DFAC = DPHI1DX(XC, YC, ZC, T + DT)  &
+                     + DPHI2DY(XC, YC, ZC, T + DT)  &
+                     + DPHI3DZ(XC, YC, ZC, T + DT)  &
+                     + II * SIN(ALPHA * M * DX) / DX * PHI1(XC, YC, ZC, T + DT) * 2 &
+                     + II * SIN(BETA  * N * DZ) / DZ * PHI3(XC, YC, ZC, T + DT) * 2 &
+                     + PHI1(XC, YC, ZC, T + DT) * DPHI1DY(XC, YC, ZC, T + DT)   &
+                     + PHI2(XC, YC, ZC, T + DT) * DPHI2DY(XC, YC, ZC, T + DT)   &
+                     + PHI3(XC, YC, ZC, T + DT) * DPHI3DY(XC, YC, ZC, T + DT)
+                
+                FAC = 2 * (COS(ALPHA * M * DX) - 1) / DX / DX + 2 * (COS(BETA * N * DZ) - 1) / DZ / DZ
+                
+                PPFAC(1) = 1 / DY(1) / H(2) * D2FAC + 1 / H(2) / 2 * DFAC
+                PCFAC(1) =-1 / DY(1) / H(2) * D2FAC - 1 / H(2) / 2 * DFAC + FAC
                 PMFAC(1) = 0
+                DIVS(I, 1, K) = DIVS(I, 1, K) + PBS(I, 1, K) / DY(1) * D2FAC - PBS(I, 1, K) / 2 * DFAC
+                
+                !J = N2
+                YC = (Y(N2) + Y(N2 - 1)) / 2
+                
+                D2FAC = 1 + PHI2(XC, YC, ZC, T + DT) * 2 &
+                      + PHI1(XC, YC, ZC, T + DT) * PHI1(XC, YC, ZC, T + DT) &
+                      + PHI2(XC, YC, ZC, T + DT) * PHI2(XC, YC, ZC, T + DT) &
+                      + PHI3(XC, YC, ZC, T + DT) * PHI3(XC, YC, ZC, T + DT)
+                
+                DFAC = DPHI1DX(XC, YC, ZC, T + DT)  &
+                     + DPHI2DY(XC, YC, ZC, T + DT)  &
+                     + DPHI3DZ(XC, YC, ZC, T + DT)  &
+                     + II * SIN(ALPHA * M * DX) / DX * PHI1(XC, YC, ZC, T + DT) * 2 &
+                     + II * SIN(BETA  * N * DZ) / DZ * PHI3(XC, YC, ZC, T + DT) * 2 &
+                     + PHI1(XC, YC, ZC, T + DT) * DPHI1DY(XC, YC, ZC, T + DT)   &
+                     + PHI2(XC, YC, ZC, T + DT) * DPHI2DY(XC, YC, ZC, T + DT)   &
+                     + PHI3(XC, YC, ZC, T + DT) * DPHI3DY(XC, YC, ZC, T + DT)
+                
+                FAC = 2 * (COS(ALPHA * M * DX) - 1) / DX / DX + 2 * (COS(BETA * N * DZ) - 1) / DZ / DZ
+                
                 PPFAC(N2) = 0
+                PCFAC(N2) = -1 / H(N2) / DY(N2) * D2FAC + 1 / H(N2) / 2 * DFAC + FAC
+                PMFAC(N2) =  1 / H(N2) / DY(N2) * D2FAC - 1 / H(N2) / 2 * DFAC
+                DIVS(I, N2, K) = DIVS(I, N2, K) - PBS(I, 2, K) / DY(N2) * D2FAC - PBS(I, 2, K) / 2 * DFAC
+                
+                !PCFAC(1) = PCFAC(1) + PMFAC(1)
+                !PCFAC(N2) = PCFAC(N2) + PPFAC(N2)
+                !
+                !PMFAC(1) = 0
+                !PPFAC(N2) = 0
+                
+                IF(M == 0 .AND. N == 0) THEN
+                    PCFAC(1) = 1
+                    PPFAC(1) = 0
+                    DIVS(I, 1, K) = 0
+                END IF
                 
                 CALL TDMA(PMFAC, PCFAC, PPFAC, DPS(I, :, K), DIVS(I, :, K))
             END DO
         END DO
         
         CALL IFFT(DPS, DP)
+        CALL TEST_PSOLVE(DP, PB, RP, T + DT)
     END SUBROUTINE SOLVE_DP
     
     SUBROUTINE UPDATE_UP()
@@ -1449,7 +1562,7 @@ MODULE FIELD
                 DPDY = DPDY / 2
                 U(I, J, K) = DU(I, J, K) - DT * DPGX    &
                            - DT * (DP(I, J, K) - DP(IM(I), J, K)) / DX    &
-                           - DT * PHI1(XC, YC, ZC, T + DT / 2) * DPDY
+                           - DT * PHI1(XC, YC, ZC, T + DT) * DPDY
                 
                 !J = N2
                 J = N2
@@ -1460,7 +1573,7 @@ MODULE FIELD
                 DPDY = DPDY / 2
                 U(I, J, K) = DU(I, J, K) - DT * DPGX    &
                            - DT * (DP(I, J, K) - DP(IM(I), J, K)) / DX    &
-                           - DT * PHI1(XC, YC, ZC, T + DT / 2) * DPDY
+                           - DT * PHI1(XC, YC, ZC, T + DT) * DPDY
                 
                 !J = N2 + 1
                 U(I, N2 + 1, K) = DU(I, N2 + 1, K)
@@ -1477,7 +1590,7 @@ MODULE FIELD
                     
                     DPDY = (DP(I, J, K) - DP(I, JM(J), K)) / H(J)
                     V(I, J, K) = DV(I, J, K)    &
-                               - DT * (1 + PHI2(XC, YC, ZC, T + DT / 2)) * DPDY
+                               - DT * (1 + PHI2(XC, YC, ZC, T + DT)) * DPDY
                 END DO
             END DO
         END DO
@@ -1505,7 +1618,7 @@ MODULE FIELD
                     DPDY = DPDY / 2
                     DPGZ = DPGZ + (DW(I, J, K) * DY(J) * DX * DZ &
                          - DT * (DP(I, J, K) - DP(I, J, KM(K))) * DX * DY(J) &
-                         - DT * (PHI3(XC, YC, ZC, T + DT / 2) * DPDY * DZ) * DY(J) * DX) * ETA
+                         - DT * (PHI3(XC, YC, ZC, T + DT) * DPDY * DZ) * DY(J) * DX) * ETA
                 END DO
                 
                 !J = 1
@@ -1517,7 +1630,7 @@ MODULE FIELD
                 DPDY = DPDY / 2
                 DPGZ = DPGZ + (DW(I, J, K) * DY(J) * DX * DZ &
                      - DT * (DP(I, J, K) - DP(I, J, KM(K))) * DX * DY(J) &
-                     - DT * (PHI3(XC, YC, ZC, T + DT / 2) * DPDY * DZ) * DY(J) * DX) * ETA
+                     - DT * (PHI3(XC, YC, ZC, T + DT) * DPDY * DZ) * DY(J) * DX) * ETA
                 
                 !J = N2
                 J = N2
@@ -1527,7 +1640,7 @@ MODULE FIELD
                 DPDY = DPDY / 2
                 DPGZ = DPGZ + (DW(I, J, K) * DY(J) * DX * DZ &
                      - DT * (DP(I, J, K) - DP(I, J, KM(K))) * DX * DY(J) &
-                     - DT * (PHI3(XC, YC, ZC, T + DT / 2) * DPDY * DZ) * DY(J) * DX) * ETA
+                     - DT * (PHI3(XC, YC, ZC, T + DT) * DPDY * DZ) * DY(J) * DX) * ETA
             END DO
         END DO
         
@@ -1545,7 +1658,7 @@ MODULE FIELD
                     DPDY = DPDY / 2
                     W(I, J, K) = DW(I, J, K) - DT * DPGZ    &
                          - DT * (DP(I, J, K) - DP(I, J, KM(K))) / DZ &
-                         - DT * PHI3(XC, YC, ZC, T + DT / 2) * DPDY
+                         - DT * PHI3(XC, YC, ZC, T + DT) * DPDY
                 END DO
                 !J = 0
                 W(I, 0, K) = DW(I, 0, K)
@@ -1559,7 +1672,7 @@ MODULE FIELD
                 DPDY = DPDY / 2
                 W(I, J, K) = DW(I, J, K) - DT * DPGZ    &
                            - DT * (DP(I, J, K) - DP(I, J, KM(K))) / DZ &
-                           - DT * PHI3(XC, YC, ZC, T + DT / 2) * DPDY
+                           - DT * PHI3(XC, YC, ZC, T + DT) * DPDY
                 
                 !J = N2
                 J = N2
@@ -1569,7 +1682,7 @@ MODULE FIELD
                 DPDY = DPDY / 2
                 W(I, J, K) = DW(I, J, K) - DT * DPGZ    &
                            - DT * (DP(I, J, K) - DP(I, J, KM(K))) / DZ &
-                           - DT * PHI3(XC, YC, ZC, T + DT / 2) * DPDY
+                           - DT * PHI3(XC, YC, ZC, T + DT) * DPDY
                 
                 !J = N2 + 1
                 W(I, N2 + 1, K) = DW(I, N2 + 1, K)
@@ -1577,9 +1690,29 @@ MODULE FIELD
         END DO
         
         !UPDATE PRESSURE
-        
+        P = P + DP
         PGX = PGX + DPGX
         PGZ = PGZ + DPGZ
     END SUBROUTINE UPDATE_UP
-    
+
+    SUBROUTINE OUTPUT()
+        IMPLICIT NONE
+        INTEGER I, J, K
+        CHARACTER(LEN = 10) NUM
+        CHARACTER(LEN = 50) PATH
+        
+        WRITE(NUM, 110) CURNT_STEP_NUM
+110     FORMAT(I10)
+        PATH = TRIM(ADJUSTL(SAVE_FILE_PATH))//'U_'//TRIM(ADJUSTL(NUM))//'.DAT'
+        OPEN(111, FILE = PATH, FORM = 'BINARY', STATUS = 'REPLACE')
+        WRITE(111) (((U(I, J, K), I = 1, N1), J = 1, N2), K = 1, N3)
+        WRITE(111) (((V(I, J, K), I = 1, N1), J = 1, N2), K = 1, N3)
+        WRITE(111) (((W(I, J, K), I = 1, N1), J = 1, N2), K = 1, N3)
+        CLOSE(111)
+        PATH = TRIM(ADJUSTL(SAVE_FILE_PATH))//'P_'//TRIM(ADJUSTL(NUM))//'.DAT'
+        OPEN(112, FILE = PATH, FORM = 'BINARY', STATUS = 'REPLACE')
+        WRITE(112) (((P(I, J, K), I = 1, N1), J = 1, N2), K = 1, N3)
+        CLOSE(112)
+    END SUBROUTINE OUTPUT
+
     END MODULE FIELD
