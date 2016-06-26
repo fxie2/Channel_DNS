@@ -106,9 +106,25 @@ MODULE MATH
         COMPLEX, INTENT(IN) :: A(:), B(:), C(:), R(:)
         COMPLEX, INTENT(OUT) :: X(:)
         
+        REAL, ALLOCATABLE :: D(:)
+        REAL SUMR
         INTEGER I, N
         
         N = SIZE(X)
+        !ALLOCATE(D(N))
+        !D = REAL(A)
+        !D = REAL(B)
+        !D = REAL(C)
+        !D = REAL(R)
+        !
+        !D(1) = REAL(A(2) + B(1))
+        !DO I = 2, N-1
+        !    D(I) = A(I + 1) + B(I) + C(I - 1)
+        !END DO
+        !D(N) = REAL(B(N) + C(N-1))
+        !
+        !SUMR = SUM(REAL(R))
+        
         CALL INITVEC(N)
         
         C_CC(1) = C(1) / B(1)
@@ -266,34 +282,36 @@ MODULE MATH
         IMPLICIT NONE
         COMPLEX(8), INTENT(INOUT) :: SF(:, :, :)
         
-        INTEGER :: N1H, N3H, N1, N3
+        INTEGER :: N1H, N3H, N1, N2, N3
         
         N1 = SIZE(SF, 1)
+        N2 = SIZE(SF, 2)
         N3 = SIZE(SF, 3)
         N1H = SIZE(SF, 1) / 2
         N3H = SIZE(SF, 3) / 2
         
-        SHIFT(1 : N1H, :, :) = SF(N1 - N1H + 1 : N1, :, :)
-        SHIFT(N1H + 1 : N1, :, :) = SF(1 : N1 - N1H, :, :)
-        SF(:, :, 1 : N3H) = SHIFT(:, :, N3 - N3H + 1 : N3)
-        SF(:, :, N3H + 1 : N3) = SHIFT(:, :, 1 : N3 - N3H)
+        SHIFT(1 : N1H, 1:N2, :) = SF(N1 - N1H + 1 : N1, :, :)
+        SHIFT(N1H + 1 : N1, 1:N2, :) = SF(1 : N1 - N1H, :, :)
+        SF(:, :, 1 : N3H) = SHIFT(:, 1:N2, N3 - N3H + 1 : N3)
+        SF(:, :, N3H + 1 : N3) = SHIFT(:, 1:N2, 1 : N3 - N3H)
     END SUBROUTINE FFTSHIFT
     
     SUBROUTINE IFFTSHIFT(SF)
         IMPLICIT NONE
         COMPLEX(8), INTENT(INOUT) :: SF(:, :, :)
         
-        INTEGER :: N1H, N3H, N1, N3
+        INTEGER :: N1H, N3H, N1, N2, N3
         
         N1 = SIZE(SF, 1)
+        N2 = SIZE(SF, 2)
         N3 = SIZE(SF, 3)
         N1H = SIZE(SF, 1) / 2
         N3H = SIZE(SF, 3) / 2
         
-        SHIFT(:, :, 1 : N3 - N3H) = SF(:, :, N3H + 1 : N3)
-        SHIFT(:, :, N3 - N3H + 1 : N3) = SF(:, :, 1 : N3H)
-        SF(1 : N1 - N1H, :, :) = SHIFT(N1H + 1 : N1, :, :)
-        SF(N1 - N1H + 1 : N1, :, :) = SHIFT(1 : N1H, :, :)
+        SHIFT(:, 1:N2, 1 : N3 - N3H) = SF(:, :, N3H + 1 : N3)
+        SHIFT(:, 1:N2, N3 - N3H + 1 : N3) = SF(:, :, 1 : N3H)
+        SF(1 : N1 - N1H, :, :) = SHIFT(N1H + 1 : N1, 1:N2, :)
+        SF(N1 - N1H + 1 : N1, :, :) = SHIFT(1 : N1H, 1:N2, :)
     END SUBROUTINE IFFTSHIFT
     
 END MODULE MATH

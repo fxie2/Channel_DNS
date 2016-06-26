@@ -172,8 +172,8 @@ MODULE MESH
         
         ETA = (UP_WAVE_AMPX * SIN(UP_WAVE_NUMX * X - UP_WAVE_PSDX * T)  &
             +  UP_WAVE_AMPZ * SIN(UP_WAVE_NUMZ * Z - UP_WAVE_PSDZ * T)  &
-            -  DN_WAVE_AMPX * SIN(DN_WAVE_NUMX * X - DN_WAVE_NUMX * T)  &
-            -  DN_WAVE_AMPZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_NUMZ * T)) / 2
+            -  DN_WAVE_AMPX * SIN(DN_WAVE_NUMX * X - DN_WAVE_PSDX * T)  &
+            -  DN_WAVE_AMPZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_PSDZ * T)) / 2
         
         DETADX = (UP_WAVE_AMPX * UP_WAVE_NUMX * COS(UP_WAVE_NUMX * X - UP_WAVE_PSDX * T)    &
                -  DN_WAVE_AMPX * DN_WAVE_NUMX * COS(DN_WAVE_NUMX * X - DN_WAVE_PSDX * T)) / 2
@@ -193,8 +193,8 @@ MODULE MESH
         
         ETA = (UP_WAVE_AMPX * SIN(UP_WAVE_NUMX * X - UP_WAVE_PSDX * T)  &
             +  UP_WAVE_AMPZ * SIN(UP_WAVE_NUMZ * Z - UP_WAVE_PSDZ * T)  &
-            -  DN_WAVE_AMPX * SIN(DN_WAVE_NUMX * X - DN_WAVE_NUMX * T)  &
-            -  DN_WAVE_AMPZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_NUMZ * T)) / 2
+            -  DN_WAVE_AMPX * SIN(DN_WAVE_NUMX * X - DN_WAVE_PSDX * T)  &
+            -  DN_WAVE_AMPZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_PSDZ * T)) / 2
         
         PHI2 = 1 / (1 + ETA) - 1
     END FUNCTION PHI2
@@ -207,8 +207,8 @@ MODULE MESH
         
         ETA = (UP_WAVE_AMPX * SIN(UP_WAVE_NUMX * X - UP_WAVE_PSDX * T)  &
             +  UP_WAVE_AMPZ * SIN(UP_WAVE_NUMZ * Z - UP_WAVE_PSDZ * T)  &
-            -  DN_WAVE_AMPX * SIN(DN_WAVE_NUMX * X - DN_WAVE_NUMX * T)  &
-            -  DN_WAVE_AMPZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_NUMZ * T)) / 2
+            -  DN_WAVE_AMPX * SIN(DN_WAVE_NUMX * X - DN_WAVE_PSDX * T)  &
+            -  DN_WAVE_AMPZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_PSDZ * T)) / 2
         
         DETADZ = (UP_WAVE_AMPZ * UP_WAVE_NUMZ * COS(UP_WAVE_NUMZ * Z - UP_WAVE_PSDZ * T)    &
                -  DN_WAVE_AMPZ * DN_WAVE_NUMZ * COS(DN_WAVE_NUMZ * Z - DN_WAVE_PSDZ * T)) / 2
@@ -228,8 +228,8 @@ MODULE MESH
         
         ETA = (UP_WAVE_AMPX * SIN(UP_WAVE_NUMX * X - UP_WAVE_PSDX * T)  &
             +  UP_WAVE_AMPZ * SIN(UP_WAVE_NUMZ * Z - UP_WAVE_PSDZ * T)  &
-            -  DN_WAVE_AMPX * SIN(DN_WAVE_NUMX * X - DN_WAVE_NUMX * T)  &
-            -  DN_WAVE_AMPZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_NUMZ * T)) / 2
+            -  DN_WAVE_AMPX * SIN(DN_WAVE_NUMX * X - DN_WAVE_PSDX * T)  &
+            -  DN_WAVE_AMPZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_PSDZ * T)) / 2
         
         DETADT = (UP_WAVE_AMPX * UP_WAVE_PSDX * COS(UP_WAVE_NUMX * X - UP_WAVE_PSDX * T)    &
                +  UP_WAVE_AMPZ * UP_WAVE_PSDZ * COS(UP_WAVE_NUMZ * Z - UP_WAVE_PSDZ * T)    &
@@ -253,8 +253,8 @@ MODULE MESH
         
         ETA = (UP_WAVE_AMPX * SIN(UP_WAVE_NUMX * X - UP_WAVE_PSDX * T)  &
             +  UP_WAVE_AMPZ * SIN(UP_WAVE_NUMZ * Z - UP_WAVE_PSDZ * T)  &
-            -  DN_WAVE_AMPX * SIN(DN_WAVE_NUMX * X - DN_WAVE_NUMX * T)  &
-            -  DN_WAVE_AMPZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_NUMZ * T)) / 2
+            -  DN_WAVE_AMPX * SIN(DN_WAVE_NUMX * X - DN_WAVE_PSDX * T)  &
+            -  DN_WAVE_AMPZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_PSDZ * T)) / 2
         
         DETADX = (UP_WAVE_AMPX * UP_WAVE_NUMX * COS(UP_WAVE_NUMX * X - UP_WAVE_PSDX * T)    &
                -  DN_WAVE_AMPX * DN_WAVE_NUMX * COS(DN_WAVE_NUMX * X - DN_WAVE_PSDX * T)) / 2
@@ -278,8 +278,8 @@ MODULE MESH
         
         ETA = (UP_WAVE_AMPX * SIN(UP_WAVE_NUMX * X - UP_WAVE_PSDX * T)  &
             +  UP_WAVE_AMPZ * SIN(UP_WAVE_NUMZ * Z - UP_WAVE_PSDZ * T)  &
-            -  DN_WAVE_AMPX * SIN(DN_WAVE_NUMX * X - DN_WAVE_NUMX * T)  &
-            -  DN_WAVE_AMPZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_NUMZ * T)) / 2
+            -  DN_WAVE_AMPX * SIN(DN_WAVE_NUMX * X - DN_WAVE_PSDX * T)  &
+            -  DN_WAVE_AMPZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_PSDZ * T)) / 2
         
         DETADZ = (UP_WAVE_AMPZ * UP_WAVE_NUMZ * COS(UP_WAVE_NUMZ * Z - UP_WAVE_PSDZ * T)    &
                -  DN_WAVE_AMPZ * DN_WAVE_NUMZ * COS(DN_WAVE_NUMZ * Z - DN_WAVE_PSDZ * T)) / 2
@@ -295,8 +295,8 @@ MODULE MESH
         
         ETA = (UP_WAVE_AMPX * SIN(UP_WAVE_NUMX * X - UP_WAVE_PSDX * T)  &
             +  UP_WAVE_AMPZ * SIN(UP_WAVE_NUMZ * Z - UP_WAVE_PSDZ * T)  &
-            -  DN_WAVE_AMPX * SIN(DN_WAVE_NUMX * X - DN_WAVE_NUMX * T)  &
-            -  DN_WAVE_AMPZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_NUMZ * T)) / 2
+            -  DN_WAVE_AMPX * SIN(DN_WAVE_NUMX * X - DN_WAVE_PSDX * T)  &
+            -  DN_WAVE_AMPZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_PSDZ * T)) / 2
         
         DETADX = (UP_WAVE_AMPX * UP_WAVE_NUMX * COS(UP_WAVE_NUMX * X - UP_WAVE_PSDX * T)    &
                -  DN_WAVE_AMPX * DN_WAVE_NUMX * COS(DN_WAVE_NUMX * X - DN_WAVE_PSDX * T)) / 2
@@ -308,7 +308,7 @@ MODULE MESH
                 -  DN_WAVE_AMPX * DN_WAVE_NUMX * DN_WAVE_NUMX * SIN(DN_WAVE_NUMX * X - DN_WAVE_PSDX * T)) / -2
         
         D2ETA0DX = (UP_WAVE_AMPX * UP_WAVE_NUMX * UP_WAVE_NUMX * SIN(UP_WAVE_NUMX * X - UP_WAVE_PSDX * T)   &
-                 -  DN_WAVE_AMPX * DN_WAVE_NUMX * DN_WAVE_NUMX * SIN(DN_WAVE_NUMX * X - DN_WAVE_PSDX * T)) / -2
+                 +  DN_WAVE_AMPX * DN_WAVE_NUMX * DN_WAVE_NUMX * SIN(DN_WAVE_NUMX * X - DN_WAVE_PSDX * T)) / -2
         
         DPHI1DX = -((Y * D2ETADX + D2ETA0DX) * (1 + ETA) - DETADX * (Y * DETADX + DETA0DX)) / (1 + ETA) / (1 + ETA)
     END FUNCTION DPHI1DX
@@ -321,8 +321,8 @@ MODULE MESH
         
         ETA = (UP_WAVE_AMPX * SIN(UP_WAVE_NUMX * X - UP_WAVE_PSDX * T)  &
             +  UP_WAVE_AMPZ * SIN(UP_WAVE_NUMZ * Z - UP_WAVE_PSDZ * T)  &
-            -  DN_WAVE_AMPX * SIN(DN_WAVE_NUMX * X - DN_WAVE_NUMX * T)  &
-            -  DN_WAVE_AMPZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_NUMZ * T)) / 2
+            -  DN_WAVE_AMPX * SIN(DN_WAVE_NUMX * X - DN_WAVE_PSDX * T)  &
+            -  DN_WAVE_AMPZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_PSDZ * T)) / 2
         
         DETADZ = (UP_WAVE_AMPZ * UP_WAVE_NUMZ * COS(UP_WAVE_NUMZ * Z - UP_WAVE_PSDZ * T)    &
                -  DN_WAVE_AMPZ * DN_WAVE_NUMZ * COS(DN_WAVE_NUMZ * Z - DN_WAVE_PSDZ * T)) / 2
@@ -334,7 +334,7 @@ MODULE MESH
                 -  DN_WAVE_AMPZ * DN_WAVE_NUMZ * DN_WAVE_NUMZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_PSDZ * T)) / -2
         
         D2ETA0DZ = (UP_WAVE_AMPZ * UP_WAVE_NUMZ * UP_WAVE_NUMZ * SIN(UP_WAVE_NUMZ * Z - UP_WAVE_PSDZ * T)   &
-                 -  DN_WAVE_AMPZ * DN_WAVE_NUMZ * DN_WAVE_NUMZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_PSDZ * T)) / -2
+                 +  DN_WAVE_AMPZ * DN_WAVE_NUMZ * DN_WAVE_NUMZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_PSDZ * T)) / -2
         
         DPHI3DZ = -((Y * D2ETADZ + D2ETA0DZ) * (1 + ETA) - DETADZ * (Y * DETADZ + DETA0DZ)) / (1 + ETA) / (1 + ETA)
     END FUNCTION DPHI3DZ
@@ -346,8 +346,52 @@ MODULE MESH
         
         GETETA = (UP_WAVE_AMPX * SIN(UP_WAVE_NUMX * X - UP_WAVE_PSDX * T)  &
                +  UP_WAVE_AMPZ * SIN(UP_WAVE_NUMZ * Z - UP_WAVE_PSDZ * T)  &
-               -  DN_WAVE_AMPX * SIN(DN_WAVE_NUMX * X - DN_WAVE_NUMX * T)  &
-               -  DN_WAVE_AMPZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_NUMZ * T)) / 2
+               -  DN_WAVE_AMPX * SIN(DN_WAVE_NUMX * X - DN_WAVE_PSDX * T)  &
+               -  DN_WAVE_AMPZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_PSDZ * T)) / 2
     END FUNCTION GETETA
+    
+    REAL FUNCTION GETETA0(X, Z, T)
+        IMPLICIT NONE
+        
+        REAL, INTENT(IN) :: X, Z, T
+        
+        GETETA0 = (UP_WAVE_AMPX * SIN(UP_WAVE_NUMX * X - UP_WAVE_PSDX * T)  &
+                +  UP_WAVE_AMPZ * SIN(UP_WAVE_NUMZ * Z - UP_WAVE_PSDZ * T)  &
+                +  DN_WAVE_AMPX * SIN(DN_WAVE_NUMX * X - DN_WAVE_PSDX * T)  &
+                +  DN_WAVE_AMPZ * SIN(DN_WAVE_NUMZ * Z - DN_WAVE_PSDZ * T)) / 2
+    END FUNCTION GETETA0
+    
+    REAL FUNCTION GETX(I, J, K, TT)
+        IMPLICIT NONE
+        INTEGER, INTENT(IN) :: I, J, K
+        REAL, INTENT(IN) :: TT
+        
+        GETX = I * DX - DX / 2
+    END FUNCTION GETX
+    
+    REAL FUNCTION GETY(I, J, K, TT)
+        IMPLICIT NONE
+        INTEGER, INTENT(IN) :: I, J, K
+        REAL, INTENT(IN) :: TT
+        
+        REAL ETA, ETA0, XC, YC, ZC
+        
+        XC = I * DX - DX / 2
+        ZC = K * DZ - DZ / 2
+        YC = (Y(J) + Y(JM(J))) / 2
+        
+        ETA = GETETA(XC, ZC, TT)
+        ETA0 = GETETA0(XC, ZC, TT)
+        
+        GETY = YC * (1 + ETA) + ETA0
+    END FUNCTION GETY
+    
+    REAL FUNCTION GETZ(I, J, K, TT)
+        IMPLICIT NONE
+        INTEGER, INTENT(IN) :: I, J, K
+        REAL, INTENT(IN) :: TT
+        
+        GETZ = K * DZ - DZ / 2
+    END FUNCTION GETZ
     
 END MODULE MESH

@@ -21,28 +21,56 @@ MODULE PROFILE
     
     !TOTAL NUM
     INTEGER, SAVE :: START_NUM, END_NUM, STEP
+    
+    !BOUNDARY PARAMETER
+    LOGICAL, SAVE :: UP_WAVE_WALL
+    LOGICAL, SAVE :: DN_WAVE_WALL
+    REAL, SAVE    :: DEVELOP_TIME
+    INTEGER, SAVE :: UP_WAVE_NUMX, UP_WAVE_NUMZ
+    INTEGER, SAVE :: DN_WAVE_NUMX, DN_WAVE_NUMZ
+    REAL, SAVE    :: UP_WAVE_PSDX, UP_WAVE_PSDZ !PHASE SPEED
+    REAL, SAVE    :: DN_WAVE_PSDX, DN_WAVE_PSDZ
+    REAL, SAVE    :: MAX_UP_AMPX, MAX_UP_AMPZ   !AMPITUDE
+    REAL, SAVE    :: MAX_DN_AMPX, MAX_DN_AMPZ
     CONTAINS
     
     SUBROUTINE READ_PROFILE()
         IMPLICIT NONE
         
-        N1 = 128
-        N2 = 128
-        N3 = 128
-        RE = 5600
-        LX = 4 * PI
+        N1 = 4
+        N2 = 3
+        N3 = 2
+        RE = 180
+        LX = 2 * PI
         LY = 2
-        LZ = 2 * PI
+        LZ = PI
         START_NUM = 0
-        END_NUM = 99900
-        STEP = 1000
+        END_NUM = 480
+        STEP = 1
         
-        MESH_PATH = 'E:\steady\CHANNEL.GRD'
-        DATA_PATH = 'F:\data3300\'
-        !DATA_PATH = 'E:\MOVE\'
+        !MESH_PATH = 'D:\steady\CHANNEL.GRD'
+        !DATA_PATH = 'E:\data3300\'
+        !DATA_PATH = 'E:\data\debug\'
         !OUTPUT_PATH = 'E:\MOVEPOST\'
-        OUTPUT_PATH = 'H:\post_nc\'
+        !OUTPUT_PATH = 'E:\data\debug\'
+        DATA_PATH = 'E:\DEBUG\'
+        OUTPUT_PATH = 'E:\DEBUG\'
         
+        UP_WAVE_WALL = .FALSE.
+        DN_WAVE_WALL = .TRUE.
+        UP_WAVE_NUMX = 1
+        UP_WAVE_NUMZ = 0
+        DN_WAVE_NUMX = 1
+        DN_WAVE_NUMZ = 0
+        UP_WAVE_PSDX = 0
+        UP_WAVE_PSDZ = 0
+        DN_WAVE_PSDX = 0
+        DN_WAVE_PSDZ = 0
+        MAX_UP_AMPX = 1E-1
+        MAX_UP_AMPZ = 0
+        MAX_DN_AMPX = 1E-1
+        MAX_DN_AMPZ = 0
+        DEVELOP_TIME = 0.01
     END SUBROUTINE READ_PROFILE
     
 END MODULE PROFILE

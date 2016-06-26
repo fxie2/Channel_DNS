@@ -55,6 +55,9 @@ public:
 	T maxval()
 	{
 		int mi, mj, mk;
+		mi = 1;
+		mj = 1;
+		mk = 1;
 		T mx = _data[0];
 		for (size_t i = _dn1; i <= _up1; i++)
 		{
