@@ -1,0 +1,48 @@
+------------------------------------------------------------------
+THE PERIODIC CHANNEL FLOW 
+------------------------------------------------------------------
+THE NUMBER OF GRID IN X1 DIRECTION   N1     :             17
+THE NUMBER OF GRID IN X2 DIRECTION   N2     :            129
+THE NUMBER OF GRID IN X3 DIRECTION   N3     :             33
+REYNOLDS NUMBER                      RE     :         2850.0
+THE PHYSICAL LENGTH IN X1            LX     :           6.28
+THE PHYSICAL LENGTH IN X3            LZ     :           3.14
+USE DEFAULT LENGTH (TRUE/FALSE)             :           TRUE
+START TIME                    START_TIME    :              0
+END TIME                      END_TIME      :          50000
+TIME STEP                     DT            :           0.01
+THE NUMBER OF TIME STEP    TOTAL_STEP_NUM   :         100000
+USE ADAPTED TIME STEP	   (TRUE/FALSE)     :           TRUE
+INITIALIZE FIELD FROM FILE (TRUE/FALSE)     :          FALSE
+SAVE INTERMIDATE DATA	   (TRUE/FALSE)     :           TRUE
+PRINT INTERMIDATE INFO     (TRUE/FALSE)     :           TRUE
+PRINT INFO PERIOD          (TIME STEPS)     :             10
+SAVE DATA PERIOD           (TIME STEPS)     :             10
+INITIAL TURBULENCE INTENSITY                :           0.50
+MAXIMUM CFL NUMBER           CFLMAX         :            2.0
+PRESSURE GRADIENT IN X       PGX            :            0.0
+PRESSURE GRADIENT IN Z       PGZ            :            0.0
+COMPUTE AVERAGE FIELD      (TRUE/FALSE)	    :           TRUE
+INSTANTANEOUS FLOW FIELD   (TRUE/FALSE)	    :           TRUE
+INTERVAL OF PRINT IN INSF(Non-zero)  NINS   :            100
+MAX SOLVE ITERATION NUMBER MAX_SOLVE_ITER   :             50
+MAX SOLVE RELATIVE ERROR   MAX_SOLVE_ERR    :          1E-10
+UP WAVE WALL               (TRUE/FALSE)     :           TRUE
+UP WAVE NUMX                                :              4
+UP WAVE NUMZ                                :              0
+UP WAVE PHASE SPEEDX                        :              0
+UP WAVE PHASE SPEEDZ                        :              0
+UP WAVE AMPLITUDEX                          :            0.1
+UP WAVE AMPLITUDEZ                          :              0
+DOWN WAVE WALL             (TRUE/FALSE)     :          FALSE
+DOWN WAVE NUMX                              :              0
+DOWN WAVE NUMZ                              :              0
+DOWN WAVE PHASE SPEEDX                      :              0
+DOWN WAVE PHASE SPEEDZ                      :              0
+DOWN WAVE AMPLITUDEX                        :              0
+DOWN WAVE AMPLITUDEZ                        :              0
+DEVELOP TIME                                :            1.0
+------------------------------------------------------------------
+INITIALIZE FILE PATH              :           CHANNEL.INI
+GRID FILE PATH                    :           CHANNEL.GRD
+------------------------------------------------------------------
