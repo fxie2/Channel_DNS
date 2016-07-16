@@ -137,9 +137,9 @@ CONTAINS
     
     SUBROUTINE USE_DEFAULT_PARAMETER()
         IMPLICIT NONE
-        N1 = 16
-        N2 = 3
-        N3 = 2
+        N1 = 64
+        N2 = 32
+        N3 = 32
         LX = DEFAULT_LX
         LY = DEFAULT_LY
         LZ = DEFAULT_LZ

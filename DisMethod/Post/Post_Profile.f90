@@ -37,7 +37,7 @@ MODULE PROFILE
     SUBROUTINE READ_PROFILE()
         IMPLICIT NONE
         
-        N1 = 4
+        N1 = 16
         N2 = 3
         N3 = 2
         RE = 180
@@ -45,7 +45,7 @@ MODULE PROFILE
         LY = 2
         LZ = PI
         START_NUM = 0
-        END_NUM = 480
+        END_NUM = 4
         STEP = 1
         
         !MESH_PATH = 'D:\steady\CHANNEL.GRD'
