@@ -137,9 +137,9 @@ CONTAINS
     
     SUBROUTINE USE_DEFAULT_PARAMETER()
         IMPLICIT NONE
-        N1 = 64
-        N2 = 32
-        N3 = 32
+        N1 = 32
+        N2 = 16
+        N3 = 2
         LX = DEFAULT_LX
         LY = DEFAULT_LY
         LZ = DEFAULT_LZ
@@ -166,12 +166,12 @@ CONTAINS
         INST_FLOW = .TRUE.
         MAXCFL = 2.0
         RE = 1000
-        INIT_TURB_INTENSITY = DEFAULT_TURB_INTENSITY
+        INIT_TURB_INTENSITY = DEFAULT_TURB_INTENSITY + 0.01
         
         MAX_SOLVE_ITER = DEFAULT_MAX_ITER
         MAX_SOLVE_ERR  = DEFAULT_MAX_ERR
         
-        UP_WAVE_WALL = .FALSE.
+        UP_WAVE_WALL = .TRUE.
         DN_WAVE_WALL = .TRUE.
         UP_WAVE_NUMX = 1
         UP_WAVE_NUMZ = 0
@@ -181,11 +181,11 @@ CONTAINS
         UP_WAVE_PSDZ = 0
         DN_WAVE_PSDX = 0
         DN_WAVE_PSDZ = 0
-        MAX_UP_AMPX = 1E-1
+        MAX_UP_AMPX = 0
         MAX_UP_AMPZ = 0
         MAX_DN_AMPX = 1E-1
         MAX_DN_AMPZ = 0
-        DEVELOP_TIME = 0.01
+        DEVELOP_TIME = 0.1
     END SUBROUTINE USE_DEFAULT_PARAMETER
         
 END MODULE GLOBAL_PARAMETER

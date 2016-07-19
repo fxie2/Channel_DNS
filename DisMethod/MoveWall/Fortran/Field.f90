@@ -7,6 +7,7 @@ MODULE FIELD
     
     REAL, SAVE, ALLOCATABLE :: U(:, :, :), V(:, :, :), W(:, :, :), P(:, :, :)
     REAL, SAVE, ALLOCATABLE :: DU(:, :, :), DV(:, :, :), DW(:, :, :), DP(:, :, :)
+    REAL, SAVE, ALLOCATABLE :: DP_U(:, :, :), DP_V(:, :, :), DP_W(:, :, :)
     REAL, SAVE, ALLOCATABLE :: DPL(:), DPR(:), TMP(:)
 
     COMPLEX, SAVE, ALLOCATABLE :: DIVS(:, :, :), DPS(:, :, :), PBS(:, :, :)
@@ -57,6 +58,9 @@ MODULE FIELD
         ALLOCATE(DV(N1, 1:N2+1, N3))
         ALLOCATE(DW(N1, 0:N2+1, N3))
         ALLOCATE(DP(N1, N2, N3))
+        ALLOCATE(DP_U(N1, 0:N2+1, N3))
+        ALLOCATE(DP_V(N1, 1:N2+1, N3))
+        ALLOCATE(DP_W(N1, 0:N2+1, N3))
         ALLOCATE(DPL(N1 * N2 * N3))
         ALLOCATE(DPR(N1 * N2 * N3))
         ALLOCATE(TMP((2*I+1)*N1*N2*N3 + I*(I+9)/2 + 1))
@@ -527,43 +531,198 @@ MODULE FIELD
         END DO
         
         PB = PB_VIS + PB_VEL
+        PB = 0
+        PRINT*, MAXVAL(ABS(PB))
+        !PAUSE
         CALL FFT(PB, PBS)
     END SUBROUTINE UPDATE_PB
     
-    SUBROUTINE GETPRE()
+    !SUBROUTINE GETPRE()
+    !    IMPLICIT NONE
+    !    
+    !    INTEGER :: ITER
+    !    REAL :: ERR = 0
+    !    
+    !    ITER = 0
+    !    DPHIST = DP
+    !    
+    !    DO WHILE(.TRUE.)
+    !        CALL UPDATE_PB
+    !        CALL FORM_RP
+    !        CALL SOLVE_DP
+    !        CALL UPDATE_UP
+    !        !PRINT*, 'MAXVAL DU - U :', MAXVAL(ABS(DU - U))
+    !        DU = U
+    !        DV = V
+    !        DW = W
+    !        ITER = ITER + 1
+    !        CALL CHECK_DIV
+    !        !PRINT*, 'MAXDIV : ', MAXVAL(ABS(DIV)), MAXLOC(ABS(DIV))
+    !        ERR = MAXVAL(ABS(DP - DPHIST))
+    !        !PRINT*, 'PERR : ', ERR, MAXLOC(ABS(DP - DPHIST))
+    !        IF(ERR < MAX_SOLVE_ERR .OR. ITER > MAX_SOLVE_ITER) EXIT
+    !        DPHIST = DP
+    !    END DO
+    !    PB = PB
+    !    CALL UPDATE_UP
+    !    CALL CHECK_DIV
+    !    !PRINT*, 'MAXDIV : ', MAXVAL(ABS(DIV))
+    !    CALL OUTPUT
+    !    SOLVE_ITER = SOLVE_ITER + ITER
+    !    
+    !END SUBROUTINE GETPRE
+    
+    SUBROUTINE GETPRE
+        IMPLICIT NONE
+        INCLUDE "mkl_rci.fi"
+        INTEGER I, J, K, ITER
+        INTEGER RCI_REQUEST
+        REAL :: ERR
+        ITER = 0
+        
+        CALL UPDATE_PB
+        CALL FORM_RP
+        DPR = RESHAPE(-RP, (/N1 * N2 * N3/))
+        PRINT*, MAXVAL(PB)
+        DPR(1) = 0
+        DPL = 0
+        DP = 0
+        CALL LAP_DP
+        CALL GETDIV(DP_U, DP_V, DP_W, DP, T + DT)
+        DPR = DPR - RESHAPE(DP, (/N1 * N2 * N3/))
+        DP = 0
+        PB = 0
+        
+        CALL DFGMRES_INIT(N1*N2*N3, DPL, DPR, RCI_REQUEST, IPAR, DPAR, TMP)
+        IF(RCI_REQUEST .NE. 0) THEN
+            PRINT*, 'GMRES SOLVER INITIALIZE FAILED'
+            PAUSE
+        END IF
+        IPAR(5) = 300     !MAX NUMBER OF ITER
+        IPAR(8) = 0         !USE MAXITER STEP TEST
+        IPAR(9) = 1         !USE MAXERR STOP TEST
+        IPAR(10) = 0        !NOT USE USER DEFINED STOPPING TEST
+        IPAR(11) = 0        !NOT USE PRECONDITIONER SOLVER
+        IPAR(12) = 1        !AUTO CHECK ZERO NORM OF THE CURRENT VECTOR
+        DPAR(1) = 1E-14      !MAX RELATIVE ERROR
+        DPAR(2) = 1E-14 !MAX ABSOLUTE ERROR
+        CALL DFGMRES_CHECK(N1*N2*N3, DPL, DPR, RCI_REQUEST, IPAR, DPAR, TMP)
+        IF(RCI_REQUEST .NE. 0) THEN
+            PRINT*, 'GMRES SOLVER CHECK FAILED, ERR NO. ', RCI_REQUEST
+            PAUSE
+        END IF
+1       CALL DFGMRES(N1*N2*N3, DPL, DPR, RCI_REQUEST, IPAR, DPAR, TMP)
+        IF(RCI_REQUEST == 0) THEN
+            DP = RESHAPE(DPL, (/N1, N2, N3/))
+        ELSEIF(RCI_REQUEST == 1) THEN
+            DP = RESHAPE(TMP(IPAR(22):IPAR(22)+N1*N2*N3-1), (/N1, N2, N3/))
+            CALL LAP_DP
+            CALL GETDIV(DP_U, DP_V, DP_W, DP, T + DT)
+            TMP(IPAR(23):IPAR(23)+N1*N2*N3-1) = RESHAPE(DP, (/N1*N2*N3/))
+            TMP(IPAR(23)) = SUM(DP)
+            !PRINT*, 'PREITER ', IPAR(4), '    PREERR ', DPAR(5)
+            GO TO 1
+        ELSE
+            PRINT*, 'GMRES SOLVER CALCULATION FAILED, ERR NO. ', RCI_REQUEST
+            PRINT*, 'PREITER', IPAR(4), 'PREERR', DPAR(5)
+            !PAUSE
+        END IF
+        
+        DP = RESHAPE(DPL, (/N1, N2, N3/))
+        SOLVE_ITER = SOLVE_ITER + IPAR(4)
+        CALL UPDATE_PB
+    END SUBROUTINE GETPRE
+    
+    SUBROUTINE LAP_DP
         IMPLICIT NONE
         
-        INTEGER :: ITER
-        REAL :: ERR = 0
+        INTEGER I, J, K
+        REAL DPDY
+        REAL XC, YC, ZC, ETA
         
-        ITER = 0
-        DPHIST = DP
+        !INIT DP_U, DP_V, DP_W TO 0
+        DP_U = 0
+        DP_V = 0
+        DP_W = 0
         
-        DO WHILE(.TRUE.)
-            CALL UPDATE_PB
-            CALL FORM_RP
-            CALL SOLVE_DP
-            CALL UPDATE_UP
-            !PRINT*, 'MAXVAL DU - U :', MAXVAL(ABS(DU - U))
-            DU = U
-            DV = V
-            DW = W
-            ITER = ITER + 1
-            CALL CHECK_DIV
-            !PRINT*, 'MAXDIV : ', MAXVAL(ABS(DIV)), MAXLOC(ABS(DIV))
-            ERR = MAXVAL(ABS(DP - DPHIST))
-            !PRINT*, 'PERR : ', ERR, MAXLOC(ABS(DP - DPHIST))
-            IF(ERR < MAX_SOLVE_ERR .OR. ITER > MAX_SOLVE_ITER) EXIT
-            DPHIST = DP
+        !UPDATE DP_U
+        DO K = 1, N3
+            ZC = (Z(K) + Z(K - 1)) / 2
+            DO I = 1, N1
+                XC = X(I - 1)
+                DO J = 2, N2 - 1
+                    YC = (Y(J) + Y(J -1)) / 2
+                    DPDY = DYH(1, J) * (DP(I, JP(J), K) + DP(IM(I), JP(J), K))  &
+                         + DYH(2, J) * (DP(I, J, K) + DP(IM(I), J, K))          &
+                         + DYH(3, J) * (DP(I, JM(J), K) + DP(IM(I), JM(J), K))
+                    DPDY = DPDY / 2
+                    DP_U(I, J, K) = -DT * (DP(I, J, K) - DP(IM(I), J, K)) / DX  &
+                                  - DT * PHI1(XC, YC, ZC, T + DT) * DPDY
+                END DO
+                !J = 1
+                YC = (Y(1) + Y(0)) / 2
+                DPDY = (DP(I, 2, K) - DP(I, 1, K)) / H(2) + PB(I, 1, K) &
+                     + (DP(IM(I), 2, K) - DP(IM(I), 1, K)) / H(2) + PB(IM(I), 1, K)
+                DPDY = DPDY / 4
+                DP_U(I, 1, K) = -DT * (DP(I, 1, K) - DP(IM(I), 1, K)) / DX  &
+                              - DT * PHI1(XC, YC, ZC, T + DT) * DPDY
+                
+                !J = N2
+                YC = (Y(N2) + Y(N2-1)) / 2
+                DPDY = PB(I, 2, K) + (DP(I, N2, K) - DP(I, N2-1, K)) / H(N2)    &
+                     + PB(IM(I), 2, K) + (DP(IM(I), N2, K) - DP(IM(I), N2-1, K)) / H(N2)
+                DPDY = DPDY / 4
+                DP_U(I, N2, K) = -DT * (DP(I, N2, K) - DP(IM(I), N2, K)) / DX   &
+                                 -DT * PHI1(XC, YC, ZC, T + DT) * DPDY
+            END DO
         END DO
-        PB = PB
-        CALL UPDATE_UP
-        CALL CHECK_DIV
-        !PRINT*, 'MAXDIV : ', MAXVAL(ABS(DIV))
-        CALL OUTPUT
-        SOLVE_ITER = SOLVE_ITER + ITER
         
-    END SUBROUTINE GETPRE
+        !UPDATE DP_V
+        DO K = 1, N3
+            ZC = (Z(K) + Z(K - 1)) / 2
+            DO J = 2, N2
+                YC = Y(J - 1)
+                DO I = 1, N1
+                    XC = (X(I) + X(I - 1)) / 2
+                    
+                    DPDY = (DP(I, J, K) - DP(I, JM(J), K)) / H(J)
+                    DP_V(I, J, K) = -DT * (1 + PHI2(XC, YC, ZC, T + DT)) * DPDY
+                END DO
+            END DO
+        END DO
+        
+        !UPDATE DP_W
+        DO K = 1, N3
+            ZC = Z(K - 1)
+            DO I = 1, N1
+                XC = (X(I) + X(I - 1)) / 2
+                DO J = 2, N2 - 1
+                    YC = (Y(J) + Y(J - 1)) / 2
+                    DPDY = DYH(1, J) * (DP(I, JP(J), K) + DP(I, JP(J), KM(K)))  &
+                         + DYH(2, J) * (DP(I, J, K) + DP(I, J, KM(K)))          &
+                         + DYH(3, J) * (DP(I, JM(J), K) + DP(I, JM(J), KM(K)))
+                    DPDY = DPDY / 2
+                    DP_W(I, J, K) = -DT * (DP(I, J, K) - DP(I, J, KM(K))) / DZ  &
+                                    -DT * PHI3(XC, YC, ZC, T + DT) * DPDY
+                END DO
+                !J = 1
+                YC = (Y(1) + Y(0)) / 2
+                DPDY = (DP(I, 2, K) - DP(I, 1, K)) / H(2) + PB(I, 1, K) &
+                     + (DP(I, 2, KM(K)) - DP(I, 1, KM(K))) / H(2) + PB(I, 1, KM(K))
+                DPDY = DPDY / 4
+                DP_W(I, 1, K) = -DT * (DP(I, 1, K) - DP(I, 1, KM(K))) / DZ  &
+                                -DT * PHI3(XC, YC, ZC, T + DT) * DPDY
+                
+                !J = N2
+                DPDY = PB(I, 2, K) + (DP(I, N2, K) - DP(I, N2-1, K)) / H(N2)    &
+                     + PB(I, 2, KM(K)) + (DP(I, N2, KM(K)) - DP(I, N2-1, KM(K))) / H(N2)
+                DPDY = DPDY / 4
+                DP_W(I, N2, K) = -DT * (DP(I, N2, K) - DP(I, N2, KM(K))) / DZ   &
+                                 -DT * PHI3(XC, YC, ZC, T + DT) * DPDY
+            END DO
+        END DO
+        DP = DP - SUM(DP) / N1 / N2 / N3
+    END SUBROUTINE LAP_DP
     
     SUBROUTINE GETU()
         IMPLICIT NONE
@@ -1616,9 +1775,7 @@ MODULE FIELD
         RP => R
         
         !GET DIVERSION OF U*
-        CALL GETDIV(DU, DV, DW, DIV, T + DT)
-        
-        RP = DIV / DT
+        CALL GETDIV(DU, DV, DW, RP, T + DT)
     END SUBROUTINE FORM_RP_ITER
     
     SUBROUTINE SOLVE_DP_FFT
@@ -1681,43 +1838,43 @@ MODULE FIELD
         !CALL TEST_PSOLVE(DP, PB, RP, DPS, PBS, DIVS, T + DT)
     END SUBROUTINE SOLVE_DP_FFT
     
-    SUBROUTINE SOLVE_DP_ITER
-        IMPLICIT NONE
-        INCLUDE "mkl_rci.fi"
-        INTEGER I, J, K, ITER
-        INTEGER RCI_REQUEST
-        REAL :: ERR
-        ITER = 0
-        
-        DPR = RESHAPE(RP, (/N1 * N2 * N3/))
-        DPL = 0
-        DP = 0
-        
-        CALL DFGMRES_INIT(N1*N2*N3, DPL, DPR, RCI_REQUEST, IPAR, DPAR, TMP)
-        IF(RCI_REQUEST .NE. 0) THEN
-            PRINT*, 'GMRES SOLVER INITIALIZE FAILED'
-            PAUSE
-        END IF
-        IPAR(5) = 10000     !MAX NUMBER OF ITER
-        IPAR(8) = 0         !USE MAXITER STEP TEST
-        IPAR(9) = 1         !USE MAXERR STOP TEST
-        IPAR(10) = 0        !NOT USE USER DEFINED STOPPING TEST
-        IPAR(11) = 0        !NOT USE PRECONDITIONER SOLVER
-        IPAR(12) = 1        !AUTO CHECK ZERO NORM OF THE CURRENT VECTOR
-        DPAR(1) = 1E-6      !MAX RELATIVE ERROR
-        DPAR(2) = MAX_SOLVE_ERR !MAX ABSOLUTE ERROR
-        CALL DFGMRES_CHECK(N1*N2*N3, DPL, DPR, RCI_REQUEST, IPAR, DPAR, TMP)
-        IF(RCI_REQUEST .NE. 0) THEN
-            PRINT*, 'GMRES SOLVER CHECK FAILED, ERR NO. ', RCI_REQUEST
-            PAUSE
-        END IF
-        CALL DFGMRES(N1*N2*N3, DPL, DPR, RCI_REQUEST, IPAR, DPAR, TMP)
-        IF(RCI_REQUEST == 0) THEN
-            DP = RESHAPE(DPL, (/N1, N2, N3/))
-        ELSEIF(RCI_REQUEST == 1) THEN
-            DP = RESHAPE(TMP(IPAR(22):IPAR(22)+N1*N2*N3-1), (/N1, N2, N3/))
-            DO J = 
-    END SUBROUTINE SOLVE_DP_ITER
+    !SUBROUTINE SOLVE_DP_ITER
+    !    IMPLICIT NONE
+    !    INCLUDE "mkl_rci.fi"
+    !    INTEGER I, J, K, ITER
+    !    INTEGER RCI_REQUEST
+    !    REAL :: ERR
+    !    ITER = 0
+    !    
+    !    DPR = RESHAPE(RP, (/N1 * N2 * N3/))
+    !    DPL = 0
+    !    DP = 0
+    !    
+    !    CALL DFGMRES_INIT(N1*N2*N3, DPL, DPR, RCI_REQUEST, IPAR, DPAR, TMP)
+    !    IF(RCI_REQUEST .NE. 0) THEN
+    !        PRINT*, 'GMRES SOLVER INITIALIZE FAILED'
+    !        PAUSE
+    !    END IF
+    !    IPAR(5) = 10000     !MAX NUMBER OF ITER
+    !    IPAR(8) = 0         !USE MAXITER STEP TEST
+    !    IPAR(9) = 1         !USE MAXERR STOP TEST
+    !    IPAR(10) = 0        !NOT USE USER DEFINED STOPPING TEST
+    !    IPAR(11) = 0        !NOT USE PRECONDITIONER SOLVER
+    !    IPAR(12) = 1        !AUTO CHECK ZERO NORM OF THE CURRENT VECTOR
+    !    DPAR(1) = 1E-6      !MAX RELATIVE ERROR
+    !    DPAR(2) = MAX_SOLVE_ERR !MAX ABSOLUTE ERROR
+    !    CALL DFGMRES_CHECK(N1*N2*N3, DPL, DPR, RCI_REQUEST, IPAR, DPAR, TMP)
+    !    IF(RCI_REQUEST .NE. 0) THEN
+    !        PRINT*, 'GMRES SOLVER CHECK FAILED, ERR NO. ', RCI_REQUEST
+    !        PAUSE
+    !    END IF
+    !    CALL DFGMRES(N1*N2*N3, DPL, DPR, RCI_REQUEST, IPAR, DPAR, TMP)
+    !    IF(RCI_REQUEST == 0) THEN
+    !        DP = RESHAPE(DPL, (/N1, N2, N3/))
+    !    ELSEIF(RCI_REQUEST == 1) THEN
+    !        DP = RESHAPE(TMP(IPAR(22):IPAR(22)+N1*N2*N3-1), (/N1, N2, N3/))
+    !        DO J = 
+    !END SUBROUTINE SOLVE_DP_ITER
     
     SUBROUTINE SOLVE_DP
         IMPLICIT NONE
@@ -1791,7 +1948,7 @@ MODULE FIELD
                     DPDY = DPDY / 2
                     U(I, J, K) = DU(I, J, K) - DT * DPGX    &
                                - DT * (DP(I, J, K) - DP(IM(I), J, K)) / DX    &
-                               - DT * PHI1(XC, YC, ZC, T + DT / 2) * DPDY
+                               - DT * PHI1(XC, YC, ZC, T + DT) * DPDY
                 END DO
                 !J = 0
                 U(I, 0, K) = U(I, 0, K) + DU(I, 0, K)

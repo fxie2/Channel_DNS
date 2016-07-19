@@ -53,8 +53,9 @@ PROGRAM CHANNEL_MAIN
             PRINT*
         END IF
         
-        CALL OUTPUT
+        !CALL OUTPUT
         !IF(MOD(CURNT_STEP_NUM, SAVE_PERIOD) == 0) CALL OUTPUT
+        PRINT*, MAXVAL(DIV), MAXLOC(DIV)
 
         CURNT_STEP_NUM = CURNT_STEP_NUM + 1
         T = T + DT
