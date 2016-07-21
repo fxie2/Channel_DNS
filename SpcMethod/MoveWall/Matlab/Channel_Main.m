@@ -12,7 +12,7 @@
 %% Basic parameters
 nx = 8;   %node number in x
 ny = 65;   %node number in y
-nz = 8;   %node number in z
+nz = 16;   %node number in z
 nxh = nx/2; %half of nx
 nyh = ny/2; %half of ny
 nzh = nz/2; %half of nz
