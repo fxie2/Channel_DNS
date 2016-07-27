@@ -59,12 +59,20 @@ i = zeros(5*P - 3, 1);
 p = zeros(5*P - 3, 1);
 v = zeros(5*P - 3, 1);
 n = 1;
-for iter = 1:P-3
+for iter = 1:P-5
     i(n:n+2) = iter*ones(1,3);
     p(n:n+2) = [0,2,4] + iter*ones(1,3);
     v(n) = k / (4*(iter + 1)*iter);
     v(n+1) = -(1 + k / (2*((iter+1)^2 - 1)));
     v(n+2) = k / (4*(iter+1)*(iter+2));
+    n = n + 3;
+end
+for iter = P-4:P-3
+    i(n:n+2) = iter*ones(1,3);
+    p(n:n+2) = [0,2,4] + iter*ones(1,3);
+    v(n) = k / (4*(iter + 1)*iter);
+    v(n+1) = -(1 + k / (2*((iter+1)^2 - 1)));
+    v(n+2) = 0;
     n = n + 3;
 end
 v(1) = k / 4;
@@ -76,14 +84,14 @@ v(n+2) = k/(4*P*(P-1));
 v(n+3) = -1;
 i(3*P-4:4*P-4) = P*ones(1,P+1);
 i(4*P-3:5*P-3) = (P+1)*ones(1,P+1);
-p(3*P-4:4*P-4) = [1:P+1];
-p(4*P-3:5*P-3) = [1:P+1];
+p(3*P-4:4*P-4) = 1:P+1;
+p(4*P-3:5*P-3) = 1:P+1;
 if boundary_type == 1
-    v(3*P-4:4*P-4) = (-1).^[0:P];
+    v(3*P-4:4*P-4) = (-1).^(0:P);
     v(4*P-3:5*P-3) = ones(1,P+1);
 elseif boundary_type == 2
-    v(3*P-4:4*P-4) = -[0:P].^2.*(-1).^[0:P];
-    v(4*P-3:5*P-3) = [0:P].^2;
+    v(3*P-4:4*P-4) = -(0:P).^2.*(-1).^(0:P);
+    v(4*P-3:5*P-3) = (0:P).^2;
 else
     disp('boundary type error!');
 end

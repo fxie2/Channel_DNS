@@ -4,7 +4,7 @@ MODULE FIELD
     IMPLICIT NONE
     
     !VELOCITY & PRESSURE FIELD
-    REAL, SAVE, ALLOCATABLE :: U(:, :, :), V(:, :, :), W(:, :, :), P(:, :, :)
+    REAL, SAVE, ALLOCATABLE :: U(:, :, :), V(:, :, :), W(:, :, :), P(:, :, :), DIV(:, :, :)
     REAL, SAVE, ALLOCATABLE :: UC(:, :, :), VC(:, :, :), WC(:, :, :)
     REAL, SAVE, ALLOCATABLE :: VELABS(:, :, :), TOLPRE(:, :, :)
     
@@ -52,7 +52,7 @@ MODULE FIELD
     SUBROUTINE CALCULATE(NUM)
         IMPLICIT NONE
         INTEGER NUM
-        CHARACTER(LEN = 128) U_INFILE, P_INFILE
+        CHARACTER(LEN = 128) U_INFILE, P_INFILE, DIV_INFILE
         CHARACTER(LEN = 10) NUM_CHAR
         LOGICAL U_EXIST, P_EXIST
         INTEGER I, J, K
@@ -66,6 +66,7 @@ MODULE FIELD
         WRITE(NUM_CHAR, "(I10)") NUM
         U_INFILE = TRIM(ADJUSTL(DATA_PATH))//'U_'//TRIM(ADJUSTL(NUM_CHAR))//'.DAT'
         P_INFILE = TRIM(ADJUSTL(DATA_PATH))//'P_'//TRIM(ADJUSTL(NUM_CHAR))//'.DAT'
+        !DIV_INFILE = TRIM(ADJUSTL(DATA_PATH))//'DIV_'//TRIM(ADJUSTL(NUM_CHAR))//'.DAT'
         INQUIRE(FILE = U_INFILE, EXIST = U_EXIST)
         INQUIRE(FILE = P_INFILE, EXIST = P_EXIST)
 
@@ -184,6 +185,7 @@ MODULE FIELD
             ALLOCATE(V(N1, 1:N2+1, N3))
             ALLOCATE(W(N1, 0:N2+1, N3))
             ALLOCATE(P(N1, N2, N3))
+            ALLOCATE(DIV(N1, N2, N3))
             ALLOCATE(UC(N1, N2, N3))
             ALLOCATE(VC(N1, N2, N3))
             ALLOCATE(WC(N1, N2, N3))
@@ -225,7 +227,7 @@ MODULE FIELD
     SUBROUTINE DEALLOC_FIELD
         IMPLICIT NONE
         IF(ALL_ALLOC) THEN
-            DEALLOCATE(U, V, W, P)
+            DEALLOCATE(U, V, W, P, DIV)
             DEALLOCATE(UC, VC, WC)
             DEALLOCATE(VELABS, TOLPRE)
             DEALLOCATE(VORX, VORY, VORZ, VORABS)
@@ -481,4 +483,46 @@ MODULE FIELD
         END DO
         
     END SUBROUTINE GET_TURBE_FIELD
-END MODULE FIELD
+    
+    SUBROUTINE OUTPUT_DEBUG(NUM)
+        IMPLICIT NONE
+        
+        INTEGER NUM
+        CHARACTER(LEN = 128) PATH
+        CHARACTER(LEN = 10) NUM_CHAR
+        INTEGER I, J, K
+        WRITE(NUM_CHAR, "(I10)") NUM
+        
+        !PATH = TRIM(ADJUSTL(OUTPUT_PATH))//'FieldData_'//TRIM(ADJUSTL(NUM_CHAR))//'.DAT'
+        !OPEN(201, FILE = PATH, STATUS = 'REPLACE')
+        PATH = TRIM(ADJUSTL(OUTPUT_PATH))//'FieldData.DAT'
+        IF (NUM == START_NUM) THEN
+            OPEN(201, FILE = PATH, STATUS = 'REPLACE')
+            WRITE(201, *) 'TITLE = "FIELD DATA"'
+            WRITE(201, "(A256)") 'VARIABLES = "X" "Y" "Z" "U" "V" "W" "P" "DIV" ' 
+        ELSE
+            OPEN(201, FILE = PATH, STATUS = 'OLD', POSITION = 'APPEND')
+        ENDIF
+        
+        WRITE(201, *) 'ZONE'
+        WRITE(201, *) 'I = ', N1, ', J = ', N2, ', K = ', N3
+        WRITE(201, *) 'DATAPACKING = BLOCK'
+        WRITE(201, *) 'SOLUTIONTIME = '//TRIM(ADJUSTL(NUM_CHAR))
+        WRITE(201, *) ((((X(I) + X(I - 1)) / 2, I = 1, N1), J = 1, N2), K = 1, N3)
+        DO K = 1, N3
+            DO J = 1, N2
+                DO I = 1, N1
+                    WRITE(201, *) GETY(I, J, K, 1.0)
+                END DO
+            END DO
+        END DO
+        WRITE(201, *) ((((Z(K) + Z(K - 1)) / 2, I = 1, N1), J = 1, N2), K = 1, N3)
+        WRITE(201, *) (((UC(I, J, K), I = 1, N1), J = 1, N2), K = 1, N3)
+        WRITE(201, *) (((VC(I, J, K), I = 1, N1), J = 1, N2), K = 1, N3)
+        WRITE(201, *) (((WC(I, J, K), I = 1, N1), J = 1, N2), K = 1, N3)
+        WRITE(201, *) (((P(I, J, K), I = 1, N1), J = 1, N2), K = 1, N3)
+        WRITE(201, *) (((DIV(I, J, K), I = 1, N1), J = 1, N2), K = 1, N3)
+        CLOSE(201)
+    END SUBROUTINE OUTPUT_DEBUG
+    
+    END MODULE FIELD
