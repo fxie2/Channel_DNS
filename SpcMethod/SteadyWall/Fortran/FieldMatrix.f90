@@ -104,6 +104,7 @@ module FieldMatrix
     subroutine init_field()
         implicit none
         integer iter_x, iter_y
+        real turb
         if(allocated(U) == .false.) call alloc_field()
         call MathKernel_init(NX, NY, NZ)
         US => US_R
@@ -136,19 +137,24 @@ module FieldMatrix
         W = 0
         P = 0
         !Velocity initialize
-        forall(iter_y = 1:NY)
-            U(iter_y, :, :) = 1 - cos((iter_y - 1) * PI / (NY - 1)) ** 2
-        end forall
+        call RANDOM_SEED()
+        do iter_y = 1, NY
+            call RANDOM_NUMBER(turb)
+            turb = turb - 0.5
+            print*, turb
+            U(iter_y, :, :) = 1 - cos((iter_y - 1) * PI / (NY - 1)) ** 2 + 1e-5 * turb
+        end do
+        call GTrans(U, US)
+        call GTrans(V, VS)
+        call GTrans(W, WS)
         U1 = US
         U2 = US
         V1 = VS
         V2 = VS
         W1 = WS
         W2 = WS
-        call GTrans(U, US)
-        call GTrans(V, VS)
-        call GTrans(W, WS)
         call Lamb
+        FX(1, NX / 2 + 1, NZ / 2 + 1) = FX(1, NX / 2 + 1, NZ / 2 + 1) + dpdx * NX * NZ
         FX1 = FX
         FX2 = FX
         FY1 = FY
@@ -232,9 +238,10 @@ module FieldMatrix
         s = s + temp
         call D_DZ(WNEW, temp, beta)
         s = s + temp
+        s = s / dt
         do k = 1, NZ
             do i = 1, NX
-                call ode_solve(alpha ** 2 * (i - 1 - NXH) ** 2 + beta ** 2 * (k - 1 - NXH) ** 2,&
+                call ode_solve(alpha ** 2 * (i - 1 - NXH) ** 2 + beta ** 2 * (k - 1 - NZH) ** 2,&
                                PS(:, i, k), s(:, i, k), 2, lower_bd(i, k), upper_bd(i, k))
             end do
         end do

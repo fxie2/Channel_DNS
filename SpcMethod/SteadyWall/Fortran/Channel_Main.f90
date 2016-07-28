@@ -4,10 +4,12 @@ program Channel_DNS
     implicit none
     call init_parm()
     call init_field()
+    print*, maxval(U)
     do while(t < end_time)
         call Calculate
         call Output
         t = t + dt
+        !read*
     end do
     print*, maxval(U)
     call dealloc_field()

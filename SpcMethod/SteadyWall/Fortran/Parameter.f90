@@ -47,12 +47,12 @@ module Global_parameter
         NX = 8
         NY = 17
         NZ = 8
-        re = 1000
+        re = 1
         alpha = 1.0
         beta = 1.0
         dt = 0.01
         start_time = 0
-        end_time = dt * 100
+        end_time = dt * 3000
         dpdx = 2. / re
         mass_flux = 0.
     end subroutine init_parm_default

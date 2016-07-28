@@ -625,38 +625,52 @@ module Math
         b(p - 1) = -s(p - 1) / (4 * (p - 1) * p)
         b(p) = bc1
         b(p + 1) = bc2
-        do i = 1, p - 5
-            fac = bdfac(i, 1) / infac(1, i)
-            bdfac(i, 1) = bdfac(i, 1) - fac * infac(1, i)
-            bdfac(i + 2, 1) = bdfac(i + 2, 1) - fac * infac(2, i)
-            bdfac(i + 4, 1) = bdfac(i + 4, 1) - fac * infac(3, i)
-            b(p) = b(p) - fac * b(i)
-            fac = bdfac(i, 2) / infac(1, i)
-            bdfac(i, 2) = bdfac(i, 2) - fac * infac(1, i)
-            bdfac(i + 2, 2) = bdfac(i + 2, 2) - fac * infac(2, i)
-            bdfac(i + 4, 2) = bdfac(i + 4, 2) - fac * infac(3, i)
-            b(p + 1) = b(p + 1) - fac * b(i)
-        end do
-        do i = p - 4, p - 1
-            fac = bdfac(i, 1) / infac(1, i)
-            bdfac(i, 1) = bdfac(i, 1) - fac * infac(1, i)
-            bdfac(i + 2, 1) = bdfac(i + 2, 1) - fac * infac(2, i)
-            b(p) = b(p) - fac * b(i)
-            fac = bdfac(i, 2) / infac(1, i)
-            bdfac(i, 2) = bdfac(i, 2) - fac * infac(1, i)
-            bdfac(i + 2, 2) = bdfac(i + 2, 2) - fac * infac(2, i)
-            b(p + 1) = b(p + 1) - fac * b(i)
-        end do
-        x(p) = (bdfac(p + 1, 2) * b(p) - bdfac(p + 1, 1) * b(p + 1))    &
-             / (bdfac(p, 1) * bdfac(p + 1, 2) - bdfac(p + 1, 1) * bdfac(p, 2))
-        x(p + 1) = (bdfac(p, 1) * b(p + 1) - bdfac(p, 2) * b(p))    &
-                 / (bdfac(p, 1) * bdfac(p + 1, 2) - bdfac(p + 1, 1) * bdfac(p, 2))
-        do i = p - 1, p - 4, -1
-            x(i) = (b(i) - infac(2, i) * x(i + 2)) / infac(1, i)
-        end do
-        do i = p - 5, 1, -1
-            x(i) = (b(i) - infac(3, i) * x(i + 4) - infac(2, i) * x(i + 2)) / infac(1, i)
-        end do
+        if(abs(k) > epsilon(1.0)) then
+            do i = 1, p - 5
+                fac = bdfac(i, 1) / infac(1, i)
+                bdfac(i, 1) = bdfac(i, 1) - fac * infac(1, i)
+                bdfac(i + 2, 1) = bdfac(i + 2, 1) - fac * infac(2, i)
+                bdfac(i + 4, 1) = bdfac(i + 4, 1) - fac * infac(3, i)
+                b(p) = b(p) - fac * b(i)
+                fac = bdfac(i, 2) / infac(1, i)
+                bdfac(i, 2) = bdfac(i, 2) - fac * infac(1, i)
+                bdfac(i + 2, 2) = bdfac(i + 2, 2) - fac * infac(2, i)
+                bdfac(i + 4, 2) = bdfac(i + 4, 2) - fac * infac(3, i)
+                b(p + 1) = b(p + 1) - fac * b(i)
+            end do
+            do i = p - 4, p - 1
+                fac = bdfac(i, 1) / infac(1, i)
+                bdfac(i, 1) = bdfac(i, 1) - fac * infac(1, i)
+                bdfac(i + 2, 1) = bdfac(i + 2, 1) - fac * infac(2, i)
+                b(p) = b(p) - fac * b(i)
+                fac = bdfac(i, 2) / infac(1, i)
+                bdfac(i, 2) = bdfac(i, 2) - fac * infac(1, i)
+                bdfac(i + 2, 2) = bdfac(i + 2, 2) - fac * infac(2, i)
+                b(p + 1) = b(p + 1) - fac * b(i)
+            end do
+            x(p) = (bdfac(p + 1, 2) * b(p) - bdfac(p + 1, 1) * b(p + 1))    &
+                / (bdfac(p, 1) * bdfac(p + 1, 2) - bdfac(p + 1, 1) * bdfac(p, 2))
+            x(p + 1) = (bdfac(p, 1) * b(p + 1) - bdfac(p, 2) * b(p))    &
+                / (bdfac(p, 1) * bdfac(p + 1, 2) - bdfac(p + 1, 1) * bdfac(p, 2))
+            do i = p - 1, p - 4, -1
+                x(i) = (b(i) - infac(2, i) * x(i + 2)) / infac(1, i)
+            end do
+            do i = p - 5, 1, -1
+                x(i) = (b(i) - infac(3, i) * x(i + 4) - infac(2, i) * x(i + 2)) / infac(1, i)
+            end do
+        else if(boundary_type == 1) then
+            x(3:p + 1) = -b(1:p - 1)
+            b(p) = b(p) - sum(x(3:p + 1) * bdfac(3:p + 1, 1))
+            b(p + 1) = b(p + 1) - sum(x(3:p + 1) * bdfac(3:p + 1, 2))
+            x(1) = (b(p) * bdfac(2, 2) - b(p + 1) * bdfac(2, 1)) &
+                 / (bdfac(1, 1) * bdfac(2, 2) - bdfac(2, 1) * bdfac(1, 2))
+            x(2) = (bdfac(1, 1) * b(p + 1) - bdfac(1, 2) * b(p)) &
+                 / (bdfac(1, 1) * bdfac(2, 2) - bdfac(2, 1) * bdfac(1, 2))
+        else
+            x(3:p + 1) = -b(1:p - 1)
+            x(2) = (b(p) - sum(x(3:p + 1) * bdfac(3:p + 1, 1))) / bdfac(2, 1)
+            x(1) = 0
+        end if
     end subroutine ode_solve
     
 end module Math
