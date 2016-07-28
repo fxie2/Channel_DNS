@@ -583,7 +583,8 @@ module Math
     
     subroutine ode_solve(k, x, s, boundary_type, bc1, bc2)
         implicit none
-        complex, intent(in) :: k, s(:), bc1, bc2
+        real, intent(in) :: k
+        complex, intent(in) :: s(:), bc1, bc2
         complex, intent(out) :: x(:)
         integer, intent(in) :: boundary_type
         integer p, i, fac
